@@ -326,3 +326,5 @@ if __name__ == "__main__":
     os.remove("dtm_pipeline.json")
 
     print("All rasters successfully created!")
+
+    # the end
