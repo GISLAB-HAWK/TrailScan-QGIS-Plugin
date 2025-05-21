@@ -10,6 +10,8 @@
 """
 
 from typing import Any, Optional
+import numpy as np
+from scipy.ndimage import gaussian_filter
 
 from qgis.core import (
     QgsProcessingAlgorithm,
@@ -18,9 +20,12 @@ from qgis.core import (
     QgsProcessingFeedback,
     QgsProcessingParameterPointCloudLayer,
     QgsProcessingParameterRasterDestination,
-    QgsProcessingUtils
+    QgsProcessingUtils,
+    QgsRasterLayer
 )
 from qgis import processing
+from qgis.core import QgsRasterFileWriter, QgsRasterDataProvider, QgsRasterBlock, QgsRaster
+from osgeo import gdal, osr
 
 
 class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -42,7 +47,8 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
     # calling from the QGIS console.
 
     INPUT = "INPUT"
-    OUTPUT = "OUTPUT"
+    OUTPUT_DTM = "OUTPUT_DTM"
+    OUTPUT_LRM = "OUTPUT_LRM"
 
     def name(self) -> str:
         """
@@ -105,7 +111,17 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         # usually takes the form of a newly created vector layer when the
         # algorithm is run in QGIS).
         self.addParameter(
-            QgsProcessingParameterRasterDestination(self.OUTPUT, "DTM")
+            QgsProcessingParameterRasterDestination(
+                name=self.OUTPUT_DTM, 
+                description="DTM"
+                )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterRasterDestination(
+                name=self.OUTPUT_LRM,
+                description="LRM",
+            )
         )
 
     def processAlgorithm(
@@ -143,13 +159,42 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
                     'FILTER_EXTENT':None,
                     'ORIGIN_X':None,
                     'ORIGIN_Y':None,
-                    'OUTPUT':parameters['OUTPUT']},
+                    'OUTPUT':parameters['OUTPUT_DTM']},
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
         )
 
-        return {self.OUTPUT: dtm["OUTPUT"]}
+        dtm_layer = QgsRasterLayer(dtm["OUTPUT"])
+        dtm_array = dtm_layer.as_numpy(use_masking=False, bands=[0])
+        dtm_array = dtm_array.reshape(-1, dtm_array.shape[1])
+
+
+        dtm_smoothed_array = gaussian_filter(dtm_array, sigma=5, mode='reflect', truncate=3.0)
+        lrm = dtm_array - dtm_smoothed_array
+
+
+
+        # Prepare output path for LRM
+        lrm_output_path = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
+        driver = gdal.GetDriverByName('GTiff')
+        out_ds = driver.Create(lrm_output_path, lrm.shape[1], lrm.shape[0], 1, gdal.GDT_Float32)
+    
+
+        # Get pixel size from DTM layer using GDAL
+        ds = gdal.Open(dtm["OUTPUT"])
+        out_ds.SetGeoTransform(ds.GetGeoTransform())
+        out_ds.SetProjection(ds.GetProjection())
+        out_ds.GetRasterBand(1).WriteArray(lrm)
+
+        
+        out_ds.FlushCache()
+        out_ds = None  # Close file
+
+        # Register the output LRM raster
+        lrm = {'OUTPUT': lrm_output_path}
+
+        return {self.OUTPUT_DTM: dtm["OUTPUT"], self.OUTPUT_LRM: lrm["OUTPUT"]}
 
 
     def createInstance(self):
