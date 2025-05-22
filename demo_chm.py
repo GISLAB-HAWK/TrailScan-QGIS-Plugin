@@ -20,9 +20,11 @@ from qgis.core import (
     QgsProcessingParameterPointCloudAttribute,
     QgsProcessingParameterRasterDestination,
     QgsProcessingUtils,
-    QgsRasterLayer
+    QgsRasterLayer,
+    Qgis
 )
 from qgis import processing
+from qgis.processing.algfactory import QgsProcessingParameterExpression
 
 
 class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -44,8 +46,8 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
     # calling from the QGIS console.
 
     INPUT = "INPUT"
-    POINT_CLASSES = "POINT_CLASSES"
     OUTPUT = "OUTPUT"
+    EXPRESSION = "EXPRESSION"
 
     def name(self) -> str:
         """
@@ -104,14 +106,16 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
             )
         )
 
-        # self.addParameter(
-        #     QgsProcessingParameterPointCloudAttribute(
-        #         name=self.POINT_CLASSES,
-        #         description="Point classes",
-        #         parentLayerParameterName=self.INPUT,
-        #     )
-
-        # )
+        self.addParameter(
+            QgsProcessingParameterExpression(
+                name=self.EXPRESSION,
+                description="Auswahl der Klassen",
+                parentLayerParameterName=self.INPUT,
+                defaultValue="Classification IN (3, 4, 5)",
+                optional=False,
+                type=Qgis.ExpressionType.PointCloud
+            )
+        )
 
         self.addParameter(
             QgsProcessingParameterRasterDestination(self.OUTPUT, "DSM")
@@ -131,6 +135,7 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
         # to uniquely identify the feature sink, and must be included in the
         # dictionary returned by the processAlgorithm function.
         source = self.parameterAsPointCloudLayer(parameters, self.INPUT, context)
+        classification = self.parameterAsExpression(parameters, self.EXPRESSION, context)
 
         # If source was not found, throw an exception to indicate that the algorithm
         # encountered a fatal error. The exception text can be any string, but in this
@@ -148,7 +153,7 @@ class ExampleProcessingAlgorithm(QgsProcessingAlgorithm):
                     'INPUT': source,
                     'RESOLUTION':0.38,
                     'TILE_SIZE':1000,
-                    'FILTER_EXPRESSION':'Classification IN (3, 4, 5)',
+                    'FILTER_EXPRESSION': classification,
                     'FILTER_EXTENT':None,
                     'ORIGIN_X':None,
                     'ORIGIN_Y':None,
