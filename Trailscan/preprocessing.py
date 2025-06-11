@@ -28,7 +28,6 @@ from qgis.core import (
     QgsProcessingMultiStepFeedback,  # Added import for QgsProcessingMultiStepFeedback
 )
 from qgis import processing
-from osgeo import gdal, osr
 import numpy as np
 from scipy.ndimage import gaussian_filter
 from scipy.stats import binned_statistic_2d
@@ -339,6 +338,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         classification_dsm = self.parameterAsExpression(parameters, self.EXPRESSION_DSM, context)
         classification_dtm = self.parameterAsExpression(parameters, self.EXPRESSION_DTM, context)
         vdi_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_VDI, context)
+        input_laz = sourceCloud.dataProvider().dataSourceUri()
         # TODO: Ausgabelayer für DTM, DSM, LRM und CHM richtig benennen
         # dtm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DTM, context) 
         # dsm = self.parameterAsOutputLayer(parameters, self.OUTPUT_DSM, context) 
@@ -416,6 +416,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
+        dtm_in = dtm_layer.dataProvider().dataSourceUri()
+        
+
+        with rasterio.open(dtm_in) as src:
+            dtm_array = src.read(1)
+            nodata_value = src.nodata
+
         dtm_layer = QgsRasterLayer(dtm["OUTPUT"])
         dtm_array = dtm_layer.as_numpy(use_masking=False, bands=[0])
         dtm_array = dtm_array.reshape(-1, dtm_array.shape[1])
@@ -425,17 +432,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         # Prepare output path for LRM
         lrm_output_path = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
-        driver = gdal.GetDriverByName('GTiff')
-        out_ds = driver.Create(lrm_output_path, lrm.shape[1], lrm.shape[0], 1, gdal.GDT_Float32)
+        transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
 
-        # Get pixel size from DTM layer using GDAL
-        ds = gdal.Open(dtm["OUTPUT"])
-        out_ds.SetGeoTransform(ds.GetGeoTransform())
-        out_ds.SetProjection(ds.GetProjection())
-        out_ds.GetRasterBand(1).WriteArray(lrm)
-
-        out_ds.FlushCache()
-        out_ds = None  # Close file
+        self.create_single_raster(lrm, transform, lrm_output_path, crs.authid(), nodata_value=nodata_value)
 
         # Register the output LRM raster
         lrm_out = {'OUTPUT': lrm_output_path}
@@ -443,15 +442,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
-
-        dtm_in = dtm_layer.dataProvider().dataSourceUri()
-        input_laz = sourceCloud.dataProvider().dataSourceUri()
-
-        with rasterio.open(dtm_in) as src:
-            dtm_array = src.read(1)
-            nodata_value = src.nodata
-
-        transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
         
         las = laspy.read(input_laz)
 
