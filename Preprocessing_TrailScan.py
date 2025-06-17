@@ -10,12 +10,12 @@ from rasterio.transform import from_origin
 from rasterio.warp import reproject, Resampling
 
 # === Input / Output (r for reversed windows-backslash) ===
-input_laz = r"F:\TrailScan\02_Daten\04_NS_Solling\laz\solling.laz"
-output_dtm = r"F:\TrailScan\02_Daten\04_NS_Solling\Solling_DTM.tif"
-output_chm = r"F:\TrailScan\02_Daten\04_NS_Solling\Solling_CHM.tif"
-output_lrm = r"F:\TrailScan\02_Daten\04_NS_Solling\Solling_LRM.tif"
-output_vdi = r"F:\TrailScan\02_Daten\04_NS_Solling\Solling_VDI.tif"
-output_raster = r"F:\TrailScan\02_Daten\04_NS_Solling\Solling_normalized.tif"
+input_laz = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_Test.laz"
+output_dtm = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_DTM.tif"
+output_chm = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_CHM.tif"
+output_lrm = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_LRM.tif"
+output_vdi = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_VDI.tif"
+output_raster = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle__normalized.tif"
 resolution = 0.38  # Resolution (raster width)
 
 # === Function: Calculate uniform extent and transform ===
@@ -326,5 +326,3 @@ if __name__ == "__main__":
     os.remove("dtm_pipeline.json")
 
     print("All rasters successfully created!")
-
-    # the end
