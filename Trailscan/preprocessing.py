@@ -162,7 +162,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 name=self.OUTPUT_NORMALIZED, 
                 description="Normalized"
                 )
-        )        
+        )            
 
     def calculate_extent_and_transform(self, input_laz, resolution):
 
@@ -286,7 +286,30 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         # Set NoData values back to 0
         normalized_data[~datamask] = nodata_value
         
-        return normalized_data                 
+        return normalized_data  
+
+    def create_multiband_raster(self, data_arrays, transform, output_path, crs, nodata_value=0):
+        """Create a multi-band raster from multiple data arrays.
+        
+        Args:
+            data_arrays: List of input data arrays
+            transform: Raster transform
+            output_path: Output file path
+            crs: Coordinate reference system
+            nodata_value: NoData value to use
+        """
+        num_bands = len(data_arrays)
+        height, width = data_arrays[0].shape
+        crs_def = CRS.from_wkt(crs)
+
+        with rasterio.open(
+            output_path, "w",
+            driver="GTiff", height=height, width=width,
+            count=num_bands, dtype=data_arrays[0].dtype, crs=crs_def, transform=transform,
+            nodata=nodata_value
+        ) as dst:
+            for i, data_array in enumerate(data_arrays, start=1):
+                dst.write(data_array, i)                       
 
     def processAlgorithm(
         self,
@@ -300,7 +323,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         """
 
         counter = itertools.count(1)
-        count_max = 7 
+        count_max = 8 
         feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
@@ -312,6 +335,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         dsm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DSM, context)
         lrm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
         chm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_CHM, context)
+        output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT_NORMALIZED, context)
 
         if sourceCloud is None:
             raise QgsProcessingException(
@@ -380,6 +404,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             is_child_algorithm=True,
         )
 
+        chm_array = QgsRasterLayer(chm["OUTPUT"]).as_numpy(use_masking=False, bands=[0])
+        chm_array = chm_array.reshape(-1, chm_array.shape[1])
+
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
@@ -396,13 +423,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         dtm_array = dtm_array.reshape(-1, dtm_array.shape[1])
 
         dtm_smoothed_array = gaussian_filter(dtm_array, sigma=5, mode='reflect', truncate=3.0)
-        lrm = dtm_array - dtm_smoothed_array
-        lrm = np.clip(lrm, -1, 1)
+        lrm_array = dtm_array - dtm_smoothed_array
+        lrm_array = np.clip(lrm_array, -1, 1)
 
         # Prepare LRM
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
 
-        self.create_single_raster(lrm, transform, lrm_outfile, crs.toWkt(), nodata_value=nodata_value)
+        self.create_single_raster(lrm_array, transform, lrm_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -416,10 +443,20 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         vdi_array = self.calculate_vdi(x, y, z_normalized, PIXEL_SIZE, width, height)
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
 
-        # Step 8: Combine arrays and normalize
-        # combined_array = np.stack([dtm_array, chm_array, lrm_array, vdi_array], axis=2)
-        # normalized_array = normalize_percentile(combined_array, nodata_value=nodata_value)
+        combined_array = np.stack([dtm_array, chm_array, lrm_array, vdi_array], axis=2)
+        normalized_array = self.normalize_percentile(combined_array, nodata_value=nodata_value)
+
+        self.create_multiband_raster(
+            [normalized_array[:,:,i] for i in range(4)], 
+            transform, 
+            output_raster,
+            crs.toWkt(),
+            nodata_value=nodata_value
+        )
 
         # Register the output raster
         dtm_out = {'OUTPUT': dtm_outfile}
@@ -427,10 +464,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         vdi_out = {'OUTPUT': vdi_outfile}
         lrm_out = {'OUTPUT': lrm_outfile}
         chm_out = {'OUTPUT': chm_outfile}
+        raster_out = {'OUTPUT': output_raster}
 
         feedback.setCurrentStep(count_max)
 
-        return {self.OUTPUT_DTM: dtm_out["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], self.OUTPUT_CHM: chm_out["OUTPUT"], self.OUTPUT_DSM: dsm_out["OUTPUT"], self.OUTPUT_VDI: vdi_out["OUTPUT"]}
+        return {self.OUTPUT_DTM: dtm_out["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], 
+        self.OUTPUT_CHM: chm_out["OUTPUT"], self.OUTPUT_DSM: dsm_out["OUTPUT"], 
+        self.OUTPUT_VDI: vdi_out["OUTPUT"], self.OUTPUT_NORMALIZED: raster_out["OUTPUT"]}
 
     def createInstance(self):
         return self.__class__()
