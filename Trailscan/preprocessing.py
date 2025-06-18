@@ -116,7 +116,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 name=self.EXPRESSION_DSM,
                 description="Selection DSM classes",
                 parentLayerParameterName=self.POINTCLOUD,
-                defaultValue="Classification IN (2, 3, 4, 5)",
+                defaultValue="Classification IN (2, 20)",
                 optional=False,
                 type=Qgis.ExpressionType.PointCloud
             )
@@ -166,7 +166,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
     def calculate_extent_and_transform(self, input_laz, resolution):
 
-        print(input_laz)
         
         las = laspy.read(input_laz)
         x_min, x_max = np.min(las.x), np.max(las.x)
@@ -248,7 +247,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         
         Args:
             data_array: Input data array
-            transform: Raster transform
             output_path: Output file path
             crs: Coordinate reference system
             nodata_value: NoData value to use
@@ -288,12 +286,11 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         
         return normalized_data  
 
-    def create_multiband_raster(self, data_arrays, output_path, crs, nodata_value=0):
+    def create_multiband_raster(self, data_arrays, transform, output_path, crs, nodata_value=0):
         """Create a multi-band raster from multiple data arrays.
         
         Args:
             data_arrays: List of input data arrays
-            transform: Raster transform
             output_path: Output file path
             crs: Coordinate reference system
             nodata_value: NoData value to use
@@ -342,8 +339,11 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 self.invalidSourceError(parameters, self.POINTCLOUD)
             )
 
-        crs = sourceCloud.crs()
-
+        crs = sourceCloud.crs().horizontalCrs()
+        if not crs.isValid():
+            raise QgsProcessingException("Invalid CRS in input point cloud")
+        
+        feedback.pushInfo(f"Using CRS: {crs.description()}")
 
         dtm = processing.run(
             "pdal:exportrastertin", 
@@ -428,6 +428,8 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         # Prepare LRM
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
+        width = dtm_layer.width() 
+        height = dtm_layer.height()
 
         self.create_single_raster(lrm_array, transform, lrm_outfile, crs.toWkt(), nodata_value=nodata_value)
 
