@@ -31,6 +31,7 @@ import laspy
 import rasterio
 from rasterio.transform import rowcol
 from rasterio.transform import from_origin
+from rasterio.crs import CRS
 import itertools
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
@@ -253,11 +254,12 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             nodata_value: NoData value to use
         """
         height, width = data_array.shape
+        crs_def = CRS.from_wkt(crs)
 
         with rasterio.open(
             output_path, "w",
             driver="GTiff", height=height, width=width,
-            count=1, dtype=data_array.dtype, crs=crs, transform=transform,
+            count=1, dtype=data_array.dtype, crs=crs_def, transform=transform,
             nodata=nodata_value
         ) as dst:
             dst.write(data_array, 1)    
@@ -427,7 +429,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         # Prepare LRM
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
 
-        self.create_single_raster(lrm, transform, lrm_outfile, crs.authid(), nodata_value=nodata_value)
+        self.create_single_raster(lrm, transform, lrm_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -439,7 +441,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         z_normalized = self.normalize_height(x, y, z, dtm_array, transform)
 
         vdi_array = self.calculate_vdi(x, y, z_normalized, PIXEL_SIZE, width, height)
-        self.create_single_raster(vdi_array, transform, vdi_outfile, crs.authid(), nodata_value=nodata_value)
+        self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         # TODO: LRM normalisiert ausgeben oder nicht?
         lrm_normalized = self.normalize_lrm(lrm, nodata_value=nodata_value)
