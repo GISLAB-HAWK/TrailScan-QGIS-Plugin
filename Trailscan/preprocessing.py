@@ -330,15 +330,14 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
+        input_laz = sourceCloud.dataProvider().dataSourceUri()
         classification_dsm = self.parameterAsExpression(parameters, self.EXPRESSION_DSM, context)
         classification_dtm = self.parameterAsExpression(parameters, self.EXPRESSION_DTM, context)
         vdi_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_VDI, context)
-        input_laz = sourceCloud.dataProvider().dataSourceUri()
-        # TODO: Ausgabelayer für DTM, DSM, LRM und CHM richtig benennen
-        # dtm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DTM, context) 
-        # dsm = self.parameterAsOutputLayer(parameters, self.OUTPUT_DSM, context) 
-        # lrm = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
-        # chm = self.parameterAsOutputLayer(parameters, self.OUTPUT_CHM, context)
+        dtm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DTM, context) 
+        dsm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DSM, context)
+        lrm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
+        chm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_CHM, context)
 
         if sourceCloud is None:
             raise QgsProcessingException(
@@ -358,7 +357,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                     'FILTER_EXTENT':None,
                     'ORIGIN_X':None,
                     'ORIGIN_Y':None,
-                    'OUTPUT':parameters['OUTPUT_DTM']},
+                    'OUTPUT':dtm_outfile},
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
@@ -378,7 +377,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                     'FILTER_EXTENT':None,
                     'ORIGIN_X':None,
                     'ORIGIN_Y':None,
-                    'OUTPUT':'TEMPORARY_OUTPUT'},
+                    'OUTPUT':dsm_outfile},
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
@@ -401,7 +400,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 'EXTENT':None,
                 'CELL_SIZE':None,
                 'CRS': crs,
-                'OUTPUT':parameters['OUTPUT_CHM']},
+                'OUTPUT':chm_outfile},
             context=context,
             feedback=feedback,
             is_child_algorithm=True,
@@ -425,14 +424,10 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         dtm_smoothed_array = gaussian_filter(dtm_array, sigma=5, mode='reflect', truncate=3.0)
         lrm = dtm_array - dtm_smoothed_array
 
-        # Prepare output path for LRM
-        lrm_output_path = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
+        # Prepare LRM
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
 
-        self.create_single_raster(lrm, transform, lrm_output_path, crs.authid(), nodata_value=nodata_value)
-
-        # Register the output LRM raster
-        lrm_out = {'OUTPUT': lrm_output_path}
+        self.create_single_raster(lrm, transform, lrm_outfile, crs.authid(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -446,19 +441,23 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         vdi_array = self.calculate_vdi(x, y, z_normalized, PIXEL_SIZE, width, height)
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.authid(), nodata_value=nodata_value)
 
-
+        # TODO: LRM normalisiert ausgeben oder nicht?
         lrm_normalized = self.normalize_lrm(lrm, nodata_value=nodata_value)
 
         # Step 8: Combine arrays and normalize
         # combined_array = np.stack([dtm_array, chm_array, lrm_array, vdi_array], axis=2)
         # normalized_array = normalize_percentile(combined_array, nodata_value=nodata_value)
 
-        # Register the output LRM raster
+        # Register the output raster
+        dtm_out = {'OUTPUT': dtm_outfile}
+        dsm_out = {'OUTPUT': dsm_outfile}
         vdi_out = {'OUTPUT': vdi_outfile}
+        lrm_out = {'OUTPUT': lrm_outfile}
+        chm_out = {'OUTPUT': chm_outfile}
 
         feedback.setCurrentStep(count_max)
 
-        return {self.OUTPUT_DTM: dtm["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], self.OUTPUT_CHM: chm["OUTPUT"], self.OUTPUT_DSM: dsm["OUTPUT"], self.OUTPUT_VDI: vdi_out["OUTPUT"]}
+        return {self.OUTPUT_DTM: dtm_out["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], self.OUTPUT_CHM: chm_out["OUTPUT"], self.OUTPUT_DSM: dsm_out["OUTPUT"], self.OUTPUT_VDI: vdi_out["OUTPUT"]}
 
     def createInstance(self):
         return self.__class__()
