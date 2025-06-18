@@ -385,35 +385,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        dsm_layer = QgsRasterLayer(dsm["OUTPUT"])
-        dsm_layer.setName("dsm")
-        dtm_layer = QgsRasterLayer(dtm["OUTPUT"])
-        dtm_layer.setName("dtm")
-
-        chm = processing.run(
-            "native:rastercalc", 
-                {
-                'LAYERS':[dsm_layer, dtm_layer],
-                'EXPRESSION': '"dsm@1"-"dtm@1"',
-                'EXTENT':None,
-                'CELL_SIZE':None,
-                'CRS': crs,
-                'OUTPUT':chm_outfile},
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
-
-        chm_array = QgsRasterLayer(chm["OUTPUT"]).as_numpy(use_masking=False, bands=[0])
-        chm_array = chm_array.reshape(-1, chm_array.shape[1])
-
-        feedback.setCurrentStep(next(counter))
-        if feedback.isCanceled():
-            return {}
-
+        dtm_layer = QgsRasterLayer(dtm["OUTPUT"])        
         dtm_in = dtm_layer.dataProvider().dataSourceUri()
         
-
         with rasterio.open(dtm_in) as src:
             dtm_array = src.read(1)
             nodata_value = src.nodata
@@ -422,14 +396,27 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         dtm_array = dtm_layer.as_numpy(use_masking=False, bands=[0])
         dtm_array = dtm_array.reshape(-1, dtm_array.shape[1])
 
-        dtm_smoothed_array = gaussian_filter(dtm_array, sigma=5, mode='reflect', truncate=3.0)
-        lrm_array = dtm_array - dtm_smoothed_array
-        lrm_array = np.clip(lrm_array, -1, 1)
+        dsm_array = QgsRasterLayer(dsm["OUTPUT"]).as_numpy(use_masking=False, bands=[0])
+        dsm_array = dsm_array.reshape(-1, dsm_array.shape[1])
 
-        # Prepare LRM
+        # CHM calculation
+        chm_array = dsm_array - dtm_array
+
+        # Collect information for raster creation
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
         width = dtm_layer.width() 
         height = dtm_layer.height()
+
+        # Write CHM raster
+        self.create_single_raster(chm_array, transform, chm_outfile, crs.toWkt(), nodata_value=nodata_value)
+
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        dtm_smoothed_array = gaussian_filter(dtm_array, sigma=5, mode='reflect', truncate=3.0)
+        lrm_array = dtm_array - dtm_smoothed_array
+        lrm_array = np.clip(lrm_array, -1, 1)
 
         self.create_single_raster(lrm_array, transform, lrm_outfile, crs.toWkt(), nodata_value=nodata_value)
 
