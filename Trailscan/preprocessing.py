@@ -286,35 +286,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         # Set NoData values back to 0
         normalized_data[~datamask] = nodata_value
         
-        return normalized_data 
-
-    def normalize_lrm(self, lrm_array, low=1, high=99, nodata_value=0):
-        """Normalizes LRM data by applying a symmetric normalization around zero.
-        
-        Args:
-            lrm_array: The LRM data to be normalized
-            low: The low percentile cut value (default: 1)
-            high: The high percentile cut value (default: 99)
-            nodata_value: The no data value (default: 0)
-        """
-        # Create mask for valid data
-        datamask = lrm_array != nodata_value
-        
-        # Calculate absolute values for percentile calculation
-        abs_values = np.abs(lrm_array[datamask])
-        max_abs = np.percentile(abs_values, q=high)
-        
-        # Normalize symmetrically around zero
-        normalized_lrm = np.zeros_like(lrm_array)
-        normalized_lrm[datamask] = np.clip(lrm_array[datamask] / (max_abs + 1E-10), -1, 1)
-        
-        # Scale to 0-1 range
-        normalized_lrm[datamask] = (normalized_lrm[datamask] + 1) / 2
-        
-        # Set NoData values back to 0
-        normalized_lrm[~datamask] = nodata_value
-        
-        return normalized_lrm                   
+        return normalized_data                 
 
     def processAlgorithm(
         self,
@@ -425,6 +397,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         dtm_smoothed_array = gaussian_filter(dtm_array, sigma=5, mode='reflect', truncate=3.0)
         lrm = dtm_array - dtm_smoothed_array
+        lrm = np.clip(lrm, -1, 1)
 
         # Prepare LRM
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
@@ -443,8 +416,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         vdi_array = self.calculate_vdi(x, y, z_normalized, PIXEL_SIZE, width, height)
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
-        # TODO: LRM normalisiert ausgeben oder nicht?
-        lrm_normalized = self.normalize_lrm(lrm, nodata_value=nodata_value)
 
         # Step 8: Combine arrays and normalize
         # combined_array = np.stack([dtm_array, chm_array, lrm_array, vdi_array], axis=2)
