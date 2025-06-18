@@ -1,3 +1,6 @@
 .vscode
 *.zip
 *.xml
+*.qgz
+test.py
+.Rhistory
