@@ -288,7 +288,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         
         return normalized_data  
 
-    def create_multiband_raster(self, data_arrays, transform, output_path, crs, nodata_value=0):
+    def create_multiband_raster(self, data_arrays, output_path, crs, nodata_value=0):
         """Create a multi-band raster from multiple data arrays.
         
         Args:
