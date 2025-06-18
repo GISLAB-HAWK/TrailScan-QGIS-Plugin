@@ -320,7 +320,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         """
 
         counter = itertools.count(1)
-        count_max = 8 
+        count_max = 12
         feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
@@ -429,6 +429,10 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         x, y, z = las.x, las.y, las.z
         z_normalized = self.normalize_height(x, y, z, dtm_array, transform)
 
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
         vdi_array = self.calculate_vdi(x, y, z_normalized, PIXEL_SIZE, width, height)
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
@@ -447,6 +451,8 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             nodata_value=nodata_value
         )
 
+        feedback.setCurrentStep(count_max)
+
         # Register the output raster
         dtm_out = {'OUTPUT': dtm_outfile}
         dsm_out = {'OUTPUT': dsm_outfile}
@@ -455,7 +461,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         chm_out = {'OUTPUT': chm_outfile}
         raster_out = {'OUTPUT': output_raster}
 
-        feedback.setCurrentStep(count_max)
+        
 
         return {self.OUTPUT_DTM: dtm_out["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], 
         self.OUTPUT_CHM: chm_out["OUTPUT"], self.OUTPUT_DSM: dsm_out["OUTPUT"], 
