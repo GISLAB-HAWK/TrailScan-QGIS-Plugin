@@ -12,6 +12,7 @@
 from PyQt5.QtWidgets import QAction, QMessageBox
 from qgis.core import QgsApplication, QgsProcessingProvider
 from .preprocessing import TrailscanPreProcessingAlgorithm
+from .inference import TrailscanInferenceProcessingAlgorithm
 import processing
 
 def classFactory(iface):
@@ -61,3 +62,4 @@ class TrailScanProvider(QgsProcessingProvider):
     def loadAlgorithms(self):
         # Load algorithms here
         self.addAlgorithm(TrailscanPreProcessingAlgorithm())
+        self.addAlgorithm(TrailscanInferenceProcessingAlgorithm())
