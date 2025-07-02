@@ -24,9 +24,14 @@ class MinimalPlugin:
         self.iface = iface
 
     def initGui(self):
+        self.toolbar = self.iface.addToolBar("Trailscan")
         self.action = QAction('Trailscan Preprocessing', self.iface.mainWindow())
+        self.action2 = QAction('Trailscan Inference', self.iface.mainWindow())
+        self.toolbar.addAction(self.action)
+        self.toolbar.addAction(self.action2)
         self.action.triggered.connect(self.runPreProcessing)
-        self.iface.addToolBarIcon(self.action)
+        self.action2.triggered.connect(self.runInference)
+        
 
         self.initProcessing()
 
@@ -35,12 +40,14 @@ class MinimalPlugin:
         QgsApplication.processingRegistry().addProvider(self.provider)
 
     def unload(self):
-        self.iface.removeToolBarIcon(self.action)
-        del self.action
+        del self.toolbar
         QgsApplication.processingRegistry().removeProvider(self.provider)
 
     def runPreProcessing(self):
         processing.execAlgorithmDialog("trailscan:preprocessing")
+
+    def runInference(self):
+        processing.execAlgorithmDialog("trailscan:inference")
 
 
 class TrailScanProvider(QgsProcessingProvider):

@@ -58,20 +58,20 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         Returns the translated algorithm name, which should be used for any
         user-visible display of the algorithm name.
         """
-        return "Inference"
+        return "02 Inference"
 
     def group(self) -> str:
         """
         Returns the name of the group this algorithm belongs to. This string
         should be localised.
         """
-        return "Processing"
+        return ""
 
     def groupId(self) -> str:
         """
         Returns the unique ID of the group this algorithm belongs to.
         """
-        return "processing"
+        return ""
 
     def shortHelpString(self) -> str:
         """
