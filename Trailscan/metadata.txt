@@ -1,0 +1,9 @@
+[general]
+name=Trailscan
+description=Trailscan plugin
+about=About this minimal plugin
+version=0.0.1
+qgisMinimumVersion=3.40
+author=Tanja Kempen, Mathias Gröbe
+email=mail@demo
+repository=https://github.com/GISLAB-HAWK/QGIS-Dev-TrailScan
