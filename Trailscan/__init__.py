@@ -18,15 +18,16 @@ import processing
 import os
 
 def classFactory(iface):
-    return MinimalPlugin(iface)
+    return TrailScan(iface)
 
 
-class MinimalPlugin:
+class TrailScan:
     def __init__(self, iface):
         self.iface = iface
 
     def initGui(self):
         self.toolbar = self.iface.addToolBar("Trailscan")
+        self.toolbar.setObjectName("TrailScanToolbar")
         self.action = QAction('Trailscan Preprocessing', self.iface.mainWindow())
         self.action2 = QAction('Trailscan Inference', self.iface.mainWindow())
         self.toolbar.addAction(self.action)
