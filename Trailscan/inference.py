@@ -27,6 +27,7 @@ import rasterio
 import onnxruntime as ort
 import itertools
 import os
+from qgis.PyQt.QtGui import QIcon
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
 MODEL_NAME = "TrailScan.onnx"
@@ -81,6 +82,9 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         Returns a localised short helper string for the algorithm. 
         """
         return "Trailscan segmentation"
+
+    def icon(self):
+        return QIcon(os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.svg'))
 
     def initAlgorithm(self, config: Optional[dict[str, Any]] = None):
         """

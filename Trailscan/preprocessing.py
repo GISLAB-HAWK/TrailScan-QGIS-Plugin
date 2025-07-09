@@ -22,6 +22,7 @@ from qgis.core import (
     QgsRasterLayer,  
     QgsProcessingMultiStepFeedback,  
 )
+from qgis.PyQt.QtGui import QIcon
 from qgis import processing
 import numpy as np
 from scipy.ndimage import gaussian_filter
@@ -33,6 +34,7 @@ from rasterio.transform import rowcol
 from rasterio.transform import from_origin
 from rasterio.crs import CRS
 import itertools
+import os
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
 
@@ -86,6 +88,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         Returns a localised short helper string for the algorithm. 
         """
         return "Trailscan preprocessing algorithm"
+
+    def icon(self):
+        return QIcon(os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.svg'))
 
     def initAlgorithm(self, config: Optional[dict[str, Any]] = None):
         """

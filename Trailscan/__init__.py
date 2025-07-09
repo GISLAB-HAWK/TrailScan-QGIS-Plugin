@@ -9,11 +9,13 @@
 # (at your option) any later version.
 #---------------------------------------------------------------------
 
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QMessageBox
 from qgis.core import QgsApplication, QgsProcessingProvider
 from .preprocessing import TrailscanPreProcessingAlgorithm
 from .inference import TrailscanInferenceProcessingAlgorithm
 import processing
+import os
 
 def classFactory(iface):
     return MinimalPlugin(iface)
@@ -63,8 +65,11 @@ class TrailScanProvider(QgsProcessingProvider):
     def description(self):
         return 'A minimal plugin for trail scanning.'
 
-    # def icon(self):
-    #     pass
+    def icon(self):
+        return QIcon(self.svgIconPath())
+
+    def svgIconPath(self):
+        return os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.svg')
 
     def loadAlgorithms(self):
         # Load algorithms here

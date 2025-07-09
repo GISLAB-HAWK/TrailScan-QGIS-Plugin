@@ -7,3 +7,4 @@ qgisMinimumVersion=3.40
 author=Tanja Kempen, Mathias Gröbe
 email=mail@demo
 repository=https://github.com/GISLAB-HAWK/QGIS-Dev-TrailScan
+icon=TrailScan_Logo.svg

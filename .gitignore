@@ -4,3 +4,6 @@
 *.qgz
 test.py
 .Rhistory
+test_crs.py
+*.copc.laz
+tmp/zuschnitt.laz
