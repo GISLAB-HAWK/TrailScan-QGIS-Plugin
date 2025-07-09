@@ -25,7 +25,7 @@ from qgis.core import (
 from qgis.PyQt.QtGui import QIcon
 from qgis import processing
 import numpy as np
-from scipy.ndimage import gaussian_filter
+from scipy.ndimage import gaussian_filter, median_filter
 from scipy.stats import binned_statistic_2d
 from scipy.interpolate import griddata
 import laspy
@@ -419,7 +419,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        dtm_smoothed_array = gaussian_filter(dtm_array, sigma=5, mode='reflect', truncate=3.0)
+        dtm_smoothed_array = median_filter(dtm_array, size=10)
         lrm_array = dtm_array - dtm_smoothed_array
         lrm_array = np.clip(lrm_array, -1, 1)
 
