@@ -34,6 +34,8 @@ from rasterio.transform import rowcol
 from rasterio.transform import from_origin
 from rasterio.crs import CRS
 import itertools
+import pdal
+import json
 import os
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
@@ -106,38 +108,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         )
 
         self.addParameter(
-            QgsProcessingParameterExpression(
-                name=self.EXPRESSION_DTM,
-                description="Selection DTM classes",
-                parentLayerParameterName=self.POINTCLOUD,
-                defaultValue="Classification IN (2)",
-                optional=False,
-                type=Qgis.ExpressionType.PointCloud
-            )
-        )  
-
-        self.addParameter(
-            QgsProcessingParameterExpression(
-                name=self.EXPRESSION_DSM,
-                description="Selection DSM classes",
-                parentLayerParameterName=self.POINTCLOUD,
-                defaultValue="Classification IN (2, 20)",
-                optional=False,
-                type=Qgis.ExpressionType.PointCloud
-            )
-        )
-
-        self.addParameter(
             QgsProcessingParameterRasterDestination(
                 name=self.OUTPUT_DTM, 
                 description="DTM"
-                )
-        )
-
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT_DSM, 
-                description="DSM"
                 )
         ) 
 
@@ -167,8 +140,51 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 name=self.OUTPUT_NORMALIZED, 
                 description="Normalized"
                 )
-        )            
+        )    
 
+    
+    def create_dtm(self, input_laz, output_dtm, resolution):
+
+        pipeline = [
+            {"type": "readers.las", "filename": input_laz },
+            {"type": "filters.outlier", "method": "statistical", "mean_k": 8, "multiplier": 3.0},
+            # Filter for ground points and create DTM
+            {"type": "filters.expression", "expression": "Classification == 2"},
+            {
+                "type": "writers.gdal",
+                "filename": output_dtm,
+                "resolution": resolution,
+                "output_type": "idw",
+                "power": 2.0,  # Increased power for better interpolation
+                "window_size": 6,  # Adjusted window size
+                "data_type": "float32",
+                "nodata": -9999,
+                "dimension": "Z"  # Explicitly specify we want to interpolate Z values
+            }
+        ] 
+        pipeline = pdal.Pipeline(json.dumps(pipeline))
+        pipeline.execute()
+
+    def create_chm(self, input_laz, output_chm, resolution):
+
+        pipeline = [
+            {"type": "readers.las", "filename": input_laz },
+            {"type":"filters.hag_delaunay", "count": 5},
+            {
+                "type": "writers.gdal",
+                "filename": output_chm,
+                "resolution": resolution,
+                "output_type": "max",
+                "power": 1,  # Increased power for better interpolation
+                "window_size": 3,  # Adjusted window size
+                "data_type": "float32",
+                "nodata": -9999,
+                "dimension": "HeightAboveGround"  # Explicitly specify we want to interpolate Z values
+            }
+        ] 
+        pipeline = pdal.Pipeline(json.dumps(pipeline))
+        pipeline.execute()        
+    
     def calculate_extent_and_transform(self, input_laz, resolution):
 
         
@@ -325,7 +341,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         """
 
         counter = itertools.count(1)
-        count_max = 12
+        count_max = 10
         feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
@@ -334,7 +350,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         classification_dtm = self.parameterAsExpression(parameters, self.EXPRESSION_DTM, context)
         vdi_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_VDI, context)
         dtm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DTM, context) 
-        dsm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DSM, context)
         lrm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
         chm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_CHM, context)
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT_NORMALIZED, context)
@@ -349,71 +364,40 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException("Invalid CRS in input point cloud")
         
         feedback.pushInfo(f"Using CRS: {crs.description()}")
+        
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
 
-        dtm = processing.run(
-            "pdal:exportrastertin", 
-                {
-                    'INPUT': sourceCloud,
-                    'RESOLUTION':PIXEL_SIZE,
-                    'TILE_SIZE':1000,
-                    'FILTER_EXPRESSION': classification_dtm,
-                    'FILTER_EXTENT':None,
-                    'ORIGIN_X':None,
-                    'ORIGIN_Y':None,
-                    'OUTPUT':dtm_outfile},
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
+        self.create_dtm(input_laz, dtm_outfile, PIXEL_SIZE)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
 
-        dsm = processing.run(
-            "pdal:exportrastertin", 
-                {
-                    'INPUT': sourceCloud,
-                    'RESOLUTION':PIXEL_SIZE,
-                    'TILE_SIZE':1000,
-                    'FILTER_EXPRESSION': classification_dsm,
-                    'FILTER_EXTENT':None,
-                    'ORIGIN_X':None,
-                    'ORIGIN_Y':None,
-                    'OUTPUT':dsm_outfile},
-            context=context,
-            feedback=feedback,
-            is_child_algorithm=True,
-        )
+        self.create_chm(input_laz, chm_outfile, PIXEL_SIZE)
 
-        feedback.setCurrentStep(next(counter))
-        if feedback.isCanceled():
-            return {}
+        chm_array = QgsRasterLayer(chm_outfile).as_numpy(use_masking=False, bands=[0])
+        chm_array = chm_array.reshape(-1, chm_array.shape[1])
 
-        dtm_layer = QgsRasterLayer(dtm["OUTPUT"])        
+
+        dtm_layer = QgsRasterLayer(dtm_outfile)        
         dtm_in = dtm_layer.dataProvider().dataSourceUri()
         
         with rasterio.open(dtm_in) as src:
             dtm_array = src.read(1)
             nodata_value = src.nodata
 
-        dtm_layer = QgsRasterLayer(dtm["OUTPUT"])
+        dtm_layer = QgsRasterLayer(dtm_outfile)        
         dtm_array = dtm_layer.as_numpy(use_masking=False, bands=[0])
         dtm_array = dtm_array.reshape(-1, dtm_array.shape[1])
 
-        dsm_array = QgsRasterLayer(dsm["OUTPUT"]).as_numpy(use_masking=False, bands=[0])
-        dsm_array = dsm_array.reshape(-1, dsm_array.shape[1])
-
-        # CHM calculation
-        chm_array = dsm_array - dtm_array
 
         # Collect information for raster creation
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
         width = dtm_layer.width() 
         height = dtm_layer.height()
 
-        # Write CHM raster
-        self.create_single_raster(chm_array, transform, chm_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -460,7 +444,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         # Register the output raster
         dtm_out = {'OUTPUT': dtm_outfile}
-        dsm_out = {'OUTPUT': dsm_outfile}
         vdi_out = {'OUTPUT': vdi_outfile}
         lrm_out = {'OUTPUT': lrm_outfile}
         chm_out = {'OUTPUT': chm_outfile}
@@ -469,7 +452,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         
 
         return {self.OUTPUT_DTM: dtm_out["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], 
-        self.OUTPUT_CHM: chm_out["OUTPUT"], self.OUTPUT_DSM: dsm_out["OUTPUT"], 
+        self.OUTPUT_CHM: chm_out["OUTPUT"], 
         self.OUTPUT_VDI: vdi_out["OUTPUT"], self.OUTPUT_NORMALIZED: raster_out["OUTPUT"]}
 
     def createInstance(self):
