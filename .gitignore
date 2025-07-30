@@ -7,3 +7,8 @@ test.py
 test_crs.py
 *.copc.laz
 tmp/zuschnitt.laz
+*.json
+*.tif
+*.tiff
+*.las
+*.laz

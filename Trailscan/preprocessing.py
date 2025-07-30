@@ -346,8 +346,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
         input_laz = sourceCloud.dataProvider().dataSourceUri()
-        classification_dsm = self.parameterAsExpression(parameters, self.EXPRESSION_DSM, context)
-        classification_dtm = self.parameterAsExpression(parameters, self.EXPRESSION_DTM, context)
         vdi_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_VDI, context)
         dtm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DTM, context) 
         lrm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
