@@ -39,6 +39,8 @@ import json
 import os
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
+DTM_PIPELINE = "dtm_pipeline.json"
+CHM_PIPELINE = "chm_pipeline.json"
 
 
 class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -145,45 +147,11 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     
     def create_dtm(self, input_laz, output_dtm, resolution):
 
-        pipeline = [
-            {"type": "readers.las", "filename": input_laz },
-            {"type": "filters.outlier", "method": "statistical", "mean_k": 8, "multiplier": 3.0},
-            # Filter for ground points and create DTM
-            {"type": "filters.expression", "expression": "Classification == 2"},
-            {
-                "type": "writers.gdal",
-                "filename": output_dtm,
-                "resolution": resolution,
-                "output_type": "idw",
-                "power": 2.0,  # Increased power for better interpolation
-                "window_size": 6,  # Adjusted window size
-                "data_type": "float32",
-                "nodata": -9999,
-                "dimension": "Z"  # Explicitly specify we want to interpolate Z values
-            }
-        ] 
-        pipeline = pdal.Pipeline(json.dumps(pipeline))
-        pipeline.execute()
+        os.system(f"pdal pipeline {os.path.join(os.path.dirname(__file__), DTM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_dtm} --writers.gdal.resolution={resolution}")
 
     def create_chm(self, input_laz, output_chm, resolution):
 
-        pipeline = [
-            {"type": "readers.las", "filename": input_laz },
-            {"type":"filters.hag_delaunay", "count": 5},
-            {
-                "type": "writers.gdal",
-                "filename": output_chm,
-                "resolution": resolution,
-                "output_type": "max",
-                "power": 1,  # Increased power for better interpolation
-                "window_size": 3,  # Adjusted window size
-                "data_type": "float32",
-                "nodata": -9999,
-                "dimension": "HeightAboveGround"  # Explicitly specify we want to interpolate Z values
-            }
-        ] 
-        pipeline = pdal.Pipeline(json.dumps(pipeline))
-        pipeline.execute()        
+        os.system(f"pdal pipeline {os.path.join(os.path.dirname(__file__), CHM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_chm} --writers.gdal.resolution={resolution}")       
     
     def calculate_extent_and_transform(self, input_laz, resolution):
 
