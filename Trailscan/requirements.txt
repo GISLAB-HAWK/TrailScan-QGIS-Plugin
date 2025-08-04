@@ -1,0 +1,6 @@
+numpy
+laspy
+rasterio
+scipy
+itertools
+os

@@ -15,27 +15,22 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingException,
-    QgsProcessingParameterExpression,
     QgsProcessingParameterPointCloudLayer,
     QgsProcessingParameterRasterDestination,
-    Qgis,
     QgsRasterLayer,  
     QgsProcessingMultiStepFeedback,  
 )
 from qgis.PyQt.QtGui import QIcon
-from qgis import processing
-import numpy as np
-from scipy.ndimage import gaussian_filter, median_filter
+from scipy.ndimage import median_filter
 from scipy.stats import binned_statistic_2d
 from scipy.interpolate import griddata
-import laspy
-import rasterio
 from rasterio.transform import rowcol
 from rasterio.transform import from_origin
 from rasterio.crs import CRS
+import numpy as np
+import laspy
+import rasterio
 import itertools
-import pdal
-import json
 import os
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
