@@ -329,18 +329,18 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if not crs.isValid():
             raise QgsProcessingException("Invalid CRS in input point cloud")
         
-        feedback.pushInfo(f"Using CRS: {crs.description()}")
-        
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
 
+        feedback.pushInfo("Creating DTM...")
         self.create_dtm(input_laz, dtm_outfile, PIXEL_SIZE)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
 
+        feedback.pushInfo("Creating CHM...")
         self.create_chm(input_laz, chm_outfile, PIXEL_SIZE)
 
         chm_array = QgsRasterLayer(chm_outfile).as_numpy(use_masking=False, bands=[0])
@@ -364,11 +364,11 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         width = dtm_layer.width() 
         height = dtm_layer.height()
 
-
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
 
+        feedback.pushInfo("Calculating LRM...")
         dtm_smoothed_array = median_filter(dtm_array, size=10)
         lrm_array = dtm_array - dtm_smoothed_array
         lrm_array = np.clip(lrm_array, -1, 1)
@@ -388,6 +388,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
+        feedback.pushInfo("Calculating VDI...")
         vdi_array = self.calculate_vdi(x, y, z_normalized, PIXEL_SIZE, width, height)
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
@@ -395,6 +396,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
+        feedback.pushInfo("Creating normalized raster by combining the different results...")
         combined_array = np.stack([dtm_array, chm_array, lrm_array, vdi_array], axis=2)
         normalized_array = self.normalize_percentile(combined_array, nodata_value=nodata_value)
 
