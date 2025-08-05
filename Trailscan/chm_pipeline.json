@@ -1,0 +1,15 @@
+[
+    {"type": "readers.las", "filename": "input.laz" },
+    {"type":"filters.hag_delaunay", "count": 5},
+    {
+        "type": "writers.gdal",
+        "filename": "output_chm.tif",
+        "resolution": 0.38,
+        "output_type": "max",
+        "power": 1,  
+        "window_size": 3,  
+        "data_type": "float32",
+        "nodata": -9999,
+        "dimension": "HeightAboveGround"  
+    }
+]

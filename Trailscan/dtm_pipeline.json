@@ -1,0 +1,16 @@
+[
+    {"type": "readers.las", "filename": "input.laz" },
+    {"type": "filters.outlier", "method": "statistical", "mean_k": 8, "multiplier": 3.0},
+    {"type": "filters.expression", "expression": "Classification == 2"},
+    {
+        "type": "writers.gdal",
+        "filename": "output_dtm.tif",
+        "resolution": 0.38,
+        "output_type": "idw",
+        "power": 2.0,  
+        "window_size": 6, 
+        "data_type": "float32",
+        "nodata": -9999,
+        "dimension": "Z"
+    }
+] 
