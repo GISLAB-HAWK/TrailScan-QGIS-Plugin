@@ -1,6 +1,7 @@
 numpy
-laspy
+laspy[lazrs,laszip]
 rasterio
+onnxruntime
 scipy
 itertools
 os
