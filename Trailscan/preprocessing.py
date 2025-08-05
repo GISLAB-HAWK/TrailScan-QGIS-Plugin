@@ -32,6 +32,7 @@ import laspy
 import rasterio
 import itertools
 import os
+import subprocess
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
 DTM_PIPELINE = "dtm_pipeline.json"
@@ -142,12 +143,12 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     
     def create_dtm(self, input_laz, output_dtm, resolution):
 
-        os.system(f"pdal pipeline {os.path.join(os.path.dirname(__file__), DTM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_dtm} --writers.gdal.resolution={resolution}")
+        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), DTM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_dtm} --writers.gdal.resolution={resolution}", shell=True)
 
     def create_chm(self, input_laz, output_chm, resolution):
 
-        os.system(f"pdal pipeline {os.path.join(os.path.dirname(__file__), CHM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_chm} --writers.gdal.resolution={resolution}")       
-    
+        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), CHM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_chm} --writers.gdal.resolution={resolution}", shell=True)
+
     def calculate_extent_and_transform(self, input_laz, resolution):
 
         
