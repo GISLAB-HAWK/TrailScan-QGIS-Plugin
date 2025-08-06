@@ -15,6 +15,7 @@ from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingContext,
     QgsProcessingException,
+    QgsProcessingParameterFile,
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer,
     Qgis,
@@ -30,7 +31,6 @@ import os
 from qgis.PyQt.QtGui import QIcon
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
-MODEL_NAME = "TrailScan.onnx"
 MODEL_CONFIG = {
     'in_shape': (4, 448, 448),  # Channels, Height, Width
     'out_bands': 1,
@@ -50,6 +50,7 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
 
     INPUT = "INPUT"
     OUTPUT = "OUTPUT"
+    MODEL_FILE = "MODEL_FILE"
 
     def name(self) -> str:
         """
@@ -96,6 +97,15 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
                 description="Input preprocessed point cloud data",
+            )
+        )
+
+        self.addParameter(
+            QgsProcessingParameterFile(
+                name=self.MODEL_FILE,
+                description="Path to the ONNX model file",
+                behavior=QgsProcessingParameterFile.Behavior.File,
+                fileFilter="ONNX model files (*.onnx);;All files (*)",
             )
         )
 
@@ -212,13 +222,16 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         source = self.parameterAsRasterLayer(parameters, self.INPUT, context)
-
+        model_path = self.parameterAsFile(parameters, self.MODEL_FILE, context)
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         if source is None:
             raise QgsProcessingException(
                 self.invalidSourceError(parameters, self.INPUT)
             )
+
+        if not os.path.isfile(model_path):
+            raise QgsProcessingException(f"Model file does not exist: {model_path}")
 
         crs = source.crs().horizontalCrs()
         if not crs.isValid():
@@ -227,8 +240,6 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         file_path = source.source()
 
         feedback.pushInfo(f"Using CRS: {crs.description()}")
-
-        model_path = os.path.join(os.path.dirname(__file__), MODEL_NAME)
 
         session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
         input_name = session.get_inputs()[0].name
