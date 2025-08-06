@@ -159,15 +159,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 )
         )    
 
-    
-    def create_dtm(self, input_laz, output_dtm, resolution):
-
-        # Overwrite some pipeline parameters for input and output
-        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), DTM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_dtm} --writers.gdal.resolution={resolution}", shell=True)
-
-    def create_chm(self, input_laz, output_chm, resolution):
-
-        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), CHM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_chm} --writers.gdal.resolution={resolution}", shell=True)
 
     def calculate_extent_and_transform(self, input_laz, resolution):
 
@@ -184,68 +175,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         transform = from_origin(x_min, y_max, resolution, resolution)
 
         return transform, width, height
-
-    def normalize_height(self, x, y, z, dtm_array, transform):
-        
-        rows, cols = rowcol(transform, x, y)
-        z_normalized = z - dtm_array[rows, cols]
-        return z_normalized
-
-    def calculate_vdi(self, x, y, z, resolution, width, height):
-        """Calculate Vegetation Density Index (VDI) from normalized point cloud data.
-        
-        Args:
-            x, y, z: Point cloud coordinates and heights
-            resolution: Raster resolution
-            width, height: Output raster dimensions
-        """
-        x = np.array(x)
-        y = np.array(y)
-        z = np.array(z)
-
-        # Filter points below 12m height
-        mask = (z <= 12)
-        z_sel = z[mask]
-        x_sel = x[mask]
-        y_sel = y[mask]
-
-        if x_sel.size == 0 or y_sel.size == 0 or z_sel.size == 0:
-            print("Warning: No points found for VDI calculation.")
-            return np.zeros((height, width))
-
-        # Filter points below 0.8m height
-        z_low = z_sel[z_sel <= 0.8]
-        x_low = x_sel[z_sel <= 0.8]
-        y_low = y_sel[z_sel <= 0.8]
-
-        # Calculate total and low vegetation density
-        total_density, _, _, _ = binned_statistic_2d(
-            x_sel, y_sel, None, statistic='count', bins=[width, height]
-        )
-        low_density, _, _, _ = binned_statistic_2d(
-            x_low, y_low, None, statistic='count', bins=[width, height]
-        )
-
-        # Calculate VDI ratio
-        vdi = np.divide(
-            low_density, total_density, out=np.full_like(low_density, 0), where=total_density != 0
-        )
-
-        # Rotate and interpolate missing values
-        vdi_rotated = np.flipud(np.fliplr(np.rot90(vdi, k=3)))
-        vdi_interpolated = self.interpolate_missing_values(vdi_rotated, method='nearest')
-        return vdi_interpolated
-
-    def interpolate_missing_values(self, grid, method='nearest'):
-        x, y = np.indices(grid.shape)
-        valid_mask = ~np.isnan(grid)
-        points = np.array([x[valid_mask], y[valid_mask]]).T
-        values = grid[valid_mask]
-
-        interpolated_grid = griddata(
-            points, values, (x, y), method=method, fill_value=0
-        )
-        return interpolated_grid 
 
     def create_single_raster(self, data_array, transform, output_path, crs, nodata_value=0):
         """Create a single-band raster from a data array.
@@ -352,35 +281,28 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             return {}
 
         feedback.pushInfo("Creating DTM...")
-        self.create_dtm(input_laz, dtm_outfile, PIXEL_SIZE)
+
+        # Overwrite some pipeline parameters for input and output
+        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), DTM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={dtm_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
 
         feedback.pushInfo("Creating CHM...")
-        self.create_chm(input_laz, chm_outfile, PIXEL_SIZE)
 
-        chm_array = QgsRasterLayer(chm_outfile).as_numpy(use_masking=False, bands=[0])
-        chm_array = chm_array.reshape(-1, chm_array.shape[1])
+        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), CHM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={chm_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
 
 
-        dtm_layer = QgsRasterLayer(dtm_outfile)        
-        dtm_in = dtm_layer.dataProvider().dataSourceUri()
-        
-        with rasterio.open(dtm_in) as src:
-            dtm_array = src.read(1)
-            nodata_value = src.nodata
+        with rasterio.open(chm_outfile) as chm_src:
+            chm_array = chm_src.read(1)
 
-        dtm_layer = QgsRasterLayer(dtm_outfile)        
-        dtm_array = dtm_layer.as_numpy(use_masking=False, bands=[0])
-        dtm_array = dtm_array.reshape(-1, dtm_array.shape[1])
-
+        with rasterio.open(dtm_outfile) as dtm_src:
+            dtm_array = dtm_src.read(1)
+            nodata_value = dtm_src.nodata
 
         # Collect information for raster creation
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
-        width = dtm_layer.width() 
-        height = dtm_layer.height()
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -397,11 +319,21 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        feedback.pushInfo("Calculating VDI...")
+        feedback.pushInfo("Calculating low and high vegetation...")
 
         subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), LOW_VEGETATION_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={low_vegetation_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
 
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
         subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), HIGH_VEGETATION_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={high_vegetation_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        feedback.pushInfo("Calculating VDI...")
 
         with rasterio.open(low_vegetation_outfile) as low_veg_src:
             low_veg_array = low_veg_src.read(1)
@@ -415,7 +347,8 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        feedback.pushInfo("Creating normalized raster by combining the different results...")
+        feedback.pushInfo("Creating normalized raster by combining the results...")
+
         combined_array = np.stack([dtm_array, chm_array, lrm_array, vdi_array], axis=2)
         normalized_array = self.normalize_percentile(combined_array, nodata_value=nodata_value)
 
@@ -435,12 +368,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         lrm_out = {'OUTPUT': lrm_outfile}
         chm_out = {'OUTPUT': chm_outfile}
         raster_out = {'OUTPUT': output_raster}
-
-        
+        high_veg_out = {'OUTPUT': high_vegetation_outfile}
+        low_veg_out = {'OUTPUT': low_vegetation_outfile}    
 
         return {self.OUTPUT_DTM: dtm_out["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], 
         self.OUTPUT_CHM: chm_out["OUTPUT"], 
-        self.OUTPUT_VDI: vdi_out["OUTPUT"], self.OUTPUT_NORMALIZED: raster_out["OUTPUT"]}
+        self.OUTPUT_VDI: vdi_out["OUTPUT"], self.OUTPUT_NORMALIZED: raster_out["OUTPUT"],
+        self.OUTPUT_HIGH_VEGETATION: high_veg_out["OUTPUT"], self.OUTPUT_LOW_VEGETATION: low_veg_out["OUTPUT"]}
 
     def createInstance(self):
         return self.__class__()
