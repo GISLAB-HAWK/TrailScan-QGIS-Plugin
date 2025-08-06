@@ -37,6 +37,8 @@ import subprocess
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
 DTM_PIPELINE = "dtm_pipeline.json"
 CHM_PIPELINE = "chm_pipeline.json"
+LOW_VEGETATION_PIPELINE = "low_vegetation_pipeline.json"
+HIGH_VEGETATION_PIPELINE = "high_vegetation_pipeline.json"
 
 
 class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -56,6 +58,8 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     OUTPUT_CHM = "OUTPUT_CHM"
     OUTPUT_VDI = "OUTPUT_VDI"
     OUTPUT_NORMALIZED = "OUTPUT_NORMALIZED"
+    OUTPUT_HIGH_VEGETATION = "OUTPUT_HIGH_VEGETATION"
+    OUTPUT_LOW_VEGETATION = "OUTPUT_LOW_VEGETATION"
 
     def name(self) -> str:
         """
@@ -135,6 +139,21 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterRasterDestination(
+                name=self.OUTPUT_HIGH_VEGETATION, 
+                description="High Vegetation"
+                )
+        ) 
+
+        self.addParameter(
+            QgsProcessingParameterRasterDestination(
+                name=self.OUTPUT_LOW_VEGETATION, 
+                description="Low Vegetation"
+                )
+        ) 
+
+
+        self.addParameter(
+            QgsProcessingParameterRasterDestination(
                 name=self.OUTPUT_NORMALIZED, 
                 description="Normalized"
                 )
@@ -143,6 +162,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     
     def create_dtm(self, input_laz, output_dtm, resolution):
 
+        # Overwrite some pipeline parameters for input and output
         subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), DTM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={output_dtm} --writers.gdal.resolution={resolution}", shell=True)
 
     def create_chm(self, input_laz, output_chm, resolution):
@@ -314,6 +334,8 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         dtm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DTM, context) 
         lrm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
         chm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_CHM, context)
+        low_vegetation_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LOW_VEGETATION, context)
+        high_vegetation_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_HIGH_VEGETATION, context)
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT_NORMALIZED, context)
 
         if sourceCloud is None:
@@ -374,18 +396,19 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
-        
-        las = laspy.read(input_laz)
-
-        x, y, z = las.x, las.y, las.z
-        z_normalized = self.normalize_height(x, y, z, dtm_array, transform)
-
-        feedback.setCurrentStep(next(counter))
-        if feedback.isCanceled():
-            return {}
 
         feedback.pushInfo("Calculating VDI...")
-        vdi_array = self.calculate_vdi(x, y, z_normalized, PIXEL_SIZE, width, height)
+
+        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), LOW_VEGETATION_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={low_vegetation_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+
+        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), HIGH_VEGETATION_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={high_vegetation_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+
+        with rasterio.open(low_vegetation_outfile) as low_veg_src:
+            low_veg_array = low_veg_src.read(1)
+        with rasterio.open(high_vegetation_outfile) as high_veg_src:
+            high_veg_array = high_veg_src.read(1)   
+
+        vdi_array = low_veg_array / high_veg_array
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
