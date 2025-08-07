@@ -40,7 +40,9 @@ HIGH_VEGETATION_PIPELINE = "high_vegetation_pipeline.json"
 
 class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     """
-
+    Preparation of point cloud data for Trailscan analysis.
+    This algorithm processes point cloud data to create various raster outputs
+    such as DTM, CHM, LRM and VDI.
     """
 
 
@@ -280,7 +282,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo("Creating DTM...")
 
         # Overwrite some pipeline parameters for input and output
-        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), DTM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={dtm_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), DTM_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{dtm_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -288,7 +290,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo("Creating CHM...")
 
-        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), CHM_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={chm_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), CHM_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{chm_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
 
 
         with rasterio.open(chm_outfile) as chm_src:
@@ -318,13 +320,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo("Calculating low and high vegetation...")
 
-        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), LOW_VEGETATION_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={low_vegetation_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), LOW_VEGETATION_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{low_vegetation_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
 
-        subprocess.call(f"pdal pipeline {os.path.join(os.path.dirname(__file__), HIGH_VEGETATION_PIPELINE)} --readers.las.filename={input_laz} --writers.gdal.filename={high_vegetation_outfile} --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), HIGH_VEGETATION_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{high_vegetation_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
