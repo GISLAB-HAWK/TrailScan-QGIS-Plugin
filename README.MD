@@ -4,8 +4,14 @@ Detection of trails in LiDAR data.
 
 ## Requirements 
 
+### Software
+
 - QGIS 3.40 or newer
 - Python packages laspy[lazrs,laszip], rasterio, onnxruntime, scipy
+
+### LiDAR data
+
+The data should be classified using the standard classes for point cloud data according to the LAS/LAZ file specifications. It recommended to reclassify your data if you have non standard point classes in the data. You can achice it using [PDAL](https://pdal.io/).
 
 ### Installation of Python packages
 
