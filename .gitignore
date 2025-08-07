@@ -12,3 +12,4 @@ tmp/zuschnitt.laz
 *.tiff
 *.las
 *.laz
+pdal.py

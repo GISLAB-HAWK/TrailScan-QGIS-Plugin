@@ -1,5 +1,5 @@
 [
-    {"type": "readers.las", "filename": "/home/mgroebe/Dokumente/QGIS-Dev-TrailScan/Testdaten/2Solling.laz" },
+    {"type": "readers.las", "filename": "input.laz" },
     {"type":"filters.hag_delaunay", "count": 5},
     {
         "type":"filters.expression",
@@ -7,7 +7,7 @@
     },
     {
         "type": "writers.gdal",
-        "filename":"/home/mgroebe/Dokumente/QGIS-Dev-TrailScan/Testdaten/2Solling_high_vegetation.tif",
+        "filename":"out.tif",
         "resolution": 0.38,
         "output_type": "count",
         "power": 1,  

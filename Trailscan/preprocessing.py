@@ -22,9 +22,6 @@ from qgis.core import (
 )
 from qgis.PyQt.QtGui import QIcon
 from scipy.ndimage import median_filter
-from scipy.stats import binned_statistic_2d
-from scipy.interpolate import griddata
-from rasterio.transform import rowcol
 from rasterio.transform import from_origin
 from rasterio.crs import CRS
 import numpy as np
