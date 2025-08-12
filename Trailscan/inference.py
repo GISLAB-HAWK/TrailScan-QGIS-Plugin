@@ -98,6 +98,8 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
                 description="Input preprocessed point cloud data",
+                defaultValue="Normalized",
+                optional=False,
             )
         )
 
