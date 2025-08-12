@@ -19,8 +19,8 @@ from qgis.core import (
     QgsProcessingParameterRasterDestination,
     QgsProcessingParameterRasterLayer,
     Qgis,
-    QgsRasterLayer,  
-    QgsProcessingMultiStepFeedback,  
+    QgsRasterLayer,
+    QgsProcessingMultiStepFeedback,
 )
 from qgis import processing
 import numpy as np
@@ -29,16 +29,18 @@ import onnxruntime as ort
 import itertools
 import os
 from qgis.PyQt.QtGui import QIcon
+import time
+from sys import stdout
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
 MODEL_CONFIG = {
-    'in_shape': (4, 448, 448),  # Channels, Height, Width
+    'in_shape': (4, 224, 224),  # Channels, Height, Width (match ONNX model)
     'out_bands': 1,
-    'stride': 224,
+    'stride': 112,
     'augmentation': True,
-    'batch_size': 4,
-    'tile_size': 256,
-    'overlap': 32
+    'batch_size': 1,  # ONNX model expects static batch size = 1
+    'tile_size': 224,
+    'overlap': 112
 }
 
 
@@ -46,7 +48,6 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
     """
 
     """
-
 
     INPUT = "INPUT"
     OUTPUT = "OUTPUT"
@@ -80,7 +81,7 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
 
     def shortHelpString(self) -> str:
         """
-        Returns a localised short helper string for the algorithm. 
+        Returns a localised short helper string for the algorithm.
         """
         return "Trailscan segmentation"
 
@@ -111,110 +112,218 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
 
         self.addParameter(
             QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT, 
+                name=self.OUTPUT,
                 description="Trailmap"
-                )
-        )            
-
+            )
+        )
 
     def predict_batch_onnx(self, session, input_name, batch: np.ndarray) -> np.ndarray:
         inputs = {input_name: batch.astype(np.float32)}
         outputs = session.run(None, inputs)
         return outputs[0]  # Shape: (N, C, H, W)
 
-
-    def augmentations_forward(self, batch: np.ndarray) -> list[np.ndarray]:
-        # Nur 4 Varianten: original + 3 Rotationen
-        aug_batches = []
-        aug_batches.append(batch)  # original
-        aug_batches.append(np.rot90(batch, k=1, axes=(2, 3)).copy())
-        aug_batches.append(np.rot90(batch, k=2, axes=(2, 3)).copy())
-        aug_batches.append(np.rot90(batch, k=3, axes=(2, 3)).copy())
-        return aug_batches
-
-
-    def reverse_augmentations(self, preds: list[np.ndarray]) -> np.ndarray:
-        # weights: original 70%, augmentations each 10%
-        weights = np.array([0.7, 0.1, 0.1, 0.1])
-
-        restored = []
-        restored.append(preds[0])  # original
-        restored.append(np.rot90(preds[1], k=3, axes=(2, 3)))
-        restored.append(np.rot90(preds[2], k=2, axes=(2, 3)))
-        restored.append(np.rot90(preds[3], k=1, axes=(2, 3)))
-
-        restored = np.stack(restored)
-        weighted_mean = np.tensordot(weights, restored, axes=1)
-        return weighted_mean
-
-
-    def predict_on_array_cf(self, model, arr, in_shape, out_bands, stride=None,
-                            batchsize=64, dtype="float32", augmentation=False,
+    def predict_on_array_cf(self, model,
+                            arr,
+                            in_shape,
+                            out_bands,
+                            stride=None,
+                            drop_border=0,
+                            batchsize=64,
+                            dtype="float32",
+                            device="cpu",
+                            augmentation=False,
+                            no_data=None,
+                            verbose=False,
+                            aggregate_metric=False,
                             input_name=None):
-        C, H, W = in_shape
-        stride = stride or H
-        arr = arr.astype(dtype)
-        height, width, channels = arr.shape
+        """
+        Applies a ONNX segmentation model to an array in a strided manner.
+        Channels first version.
 
-        pad_h = (H - (height - H) % stride) % stride
-        pad_w = (W - (width - W) % stride) % stride
-        arr_padded = np.pad(arr, ((0, pad_h), (0, pad_w), (0, 0)), mode='reflect')
+        Args:
+            model: ONNX InferenceSession
+            arr: CHW array for which the segmentation should be created
+            stride: stride with which the model should be applied. Default: output size
+            batchsize: number of images to process in parallel
+            dtype: desired output type (default: float32)
+            augmentation: whether to average over rotations and mirrorings of the image or not.
+            no_data: a no-data value. It's used to compute the area containing data via the first input image channel.
+            verbose: whether or not to display progress
+            input_name: ONNX input tensor name
 
-        out_h = (arr_padded.shape[0] - H) // stride + 1
-        out_w = (arr_padded.shape[1] - W) // stride + 1
+        Returns:
+            dict with prediction, time, nodata_region and metric
+        """
+        t0 = time.time()
+        metric = 0
 
-        prediction = np.zeros((out_h * out_w, out_bands, H, W), dtype=dtype)
+        if augmentation:
+            operations = (lambda x: x,
+                          lambda x: np.rot90(x, 1, axes=(1, 2)),
+                          lambda x: np.flip(x, 1))
+            inverse = (lambda x: x,
+                       lambda x: np.rot90(x, -1, axes=(1, 2)),
+                       lambda x: np.flip(x, 1))
+        else:
+            operations = (lambda x: x,)
+            inverse = (lambda x: x,)
 
-        batch = []
-        coords = []
-        k = 0
+        assert in_shape[1] == in_shape[2], "Input shape must be square."
+        out_shape = (out_bands, in_shape[1] - 2 * drop_border, in_shape[2] - 2 * drop_border)
+        in_size = in_shape[1]
+        out_size = out_shape[1]
+        stride = stride or out_size
+        pad = (in_size - out_size) // 2
+        assert pad % 2 == 0, "Model input and output shapes must have pad divisible by 2."
 
-        for i in range(0, arr_padded.shape[0] - H + 1, stride):
-            for j in range(0, arr_padded.shape[1] - W + 1, stride):
-                patch = arr_padded[i:i + H, j:j + W, :].transpose(2, 0, 1)  # HWC to CHW
-                batch.append(patch)
-                coords.append((i, j))
-                if len(batch) == batchsize or (i == arr_padded.shape[0] - H and j == arr_padded.shape[1] - W):
-                    batch_np = np.stack(batch)
-                    if augmentation:
-                        aug_batches = self.augmentations_forward(batch_np)
-                        aug_preds = []
-                        for aug_batch in aug_batches:
-                            pred = self.predict_batch_onnx(model, input_name, aug_batch)
-                            aug_preds.append(pred)
-                        pred = self.reverse_augmentations(aug_preds)
-                    else:
-                        pred = self.predict_batch_onnx(model, input_name, batch_np)
+        original_size = arr.shape
+        ymin, xmin = 0, 0
+        ymax, xmax = arr.shape[1], arr.shape[2]
 
-                    prediction[k:k + len(batch)] = pred
-                    k += len(batch)
-                    batch = []
+        if no_data is not None:
+            nonzero = np.nonzero(arr[0, :, :] != no_data)
+            if len(nonzero[0]) == 0:
+                return {"prediction": None,
+                        "time": time.time() - t0,
+                        "nodata_region": (0, 0, 0, 0),
+                        "metric": metric}
+            ymin = int(np.min(nonzero[0]))
+            ymax = int(np.max(nonzero[0]))
+            xmin = int(np.min(nonzero[1]))
+            xmax = int(np.max(nonzero[1]))
+            img = arr[:, ymin:ymax, xmin:xmax]
+        else:
+            img = arr
 
-        result = np.zeros((arr_padded.shape[0], arr_padded.shape[1], out_bands), dtype=dtype)
-        count = np.zeros_like(result)
-        k = 0
-        for i in range(0, arr_padded.shape[0] - H + 1, stride):
-            for j in range(0, arr_padded.shape[1] - W + 1, stride):
-                result[i:i + H, j:j + W, :] += prediction[k].transpose(1, 2, 0)
-                count[i:i + H, j:j + W, :] += 1
-                k += 1
+        weight_mask = self.compute_pyramid_patch_weight_loss(out_size, out_size)
+        final_output = np.zeros((out_bands,) + img.shape[1:], dtype=dtype)
 
-        with np.errstate(divide='ignore', invalid='ignore'):
-            result = np.divide(result, count, out=np.zeros_like(result), where=(count != 0))
+        op_cnt = 0
+        for op, inv in zip(operations, inverse):
+            img_aug = op(img)
+            img_shape = img_aug.shape
 
-        result = result[:height, :width, :]
-        return result.squeeze()
-                         
+            x_tiles = int(np.ceil(img_shape[2] / stride))
+            y_tiles = int(np.ceil(img_shape[1] / stride))
+
+            y_range = range(0, (y_tiles + 1) * stride - out_size, stride)
+            x_range = range(0, (x_tiles + 1) * stride - out_size, stride)
+
+            y_pad_after = y_range[-1] + in_size - img_shape[1] - pad
+            x_pad_after = x_range[-1] + in_size - img_shape[2] - pad
+
+            output = np.zeros((out_bands,) + (img_shape[1] + y_pad_after - pad, img_shape[2] + x_pad_after - pad),
+                              dtype=dtype)
+            division_mask = np.zeros(output.shape[1:], dtype=dtype) + 1E-7
+            img_padded = np.pad(img_aug, ((0, 0), (pad, y_pad_after), (pad, x_pad_after)), mode='reflect')
+
+            patches = len(y_range) * len(x_range)
+
+            def patch_generator():
+                for y in y_range:
+                    for x in x_range:
+                        yield img_padded[:, y:y + in_size, x:x + in_size]
+
+            patch_gen = patch_generator()
+
+            y = 0
+            x = 0
+            patch_idx = 0
+            batchsize_ = batchsize
+
+            while patch_idx < patches:
+                batchsize_ = min(batchsize_, patches, patches - patch_idx)
+                patch_idx += batchsize_
+                if verbose:
+                    stdout.write("\r%.2f%%" % (100 * (patch_idx + op_cnt * patches) / (len(operations) * patches)))
+
+                batch = np.zeros((batchsize_,) + in_shape, dtype=dtype)
+                for j in range(batchsize_):
+                    batch[j] = next(patch_gen)
+
+                prediction = self.predict_batch_onnx(model, input_name, batch)
+                if drop_border > 0:
+                    prediction = prediction[:, :, drop_border:-drop_border, drop_border:-drop_border]
+
+                for j in range(batchsize_):
+                    output[:, y:y + out_size, x:x + out_size] += prediction[j] * weight_mask[None, ...]
+                    division_mask[y:y + out_size, x:x + out_size] += weight_mask
+                    x += stride
+                    if x + out_size > output.shape[2]:
+                        x = 0
+                        y += stride
+
+            output = output / division_mask[None, ...]
+            output = inv(output[:, :img_shape[1], :img_shape[2]])
+            final_output += output
+            op_cnt += 1
+            if verbose:
+                stdout.write("\rAugmentation step %d/%d done.\n" % (op_cnt, len(operations)))
+
+        if verbose:
+            stdout.flush()
+
+        final_output = final_output / len(operations)
+
+        if no_data is not None:
+            final_output = np.pad(final_output,
+                                  ((0, 0), (ymin, original_size[1] - ymax), (xmin, original_size[2] - xmax)),
+                                  mode='constant',
+                                  constant_values=0)
+
+        return {"prediction": final_output,
+                "time": time.time() - t0,
+                "nodata_region": (ymin, ymax, xmin, xmax),
+                "metric": metric}
+
+    def compute_pyramid_patch_weight_loss(self, width: int, height: int) -> np.ndarray:
+        """Compute a weight matrix that assigns bigger weight on pixels in center and
+        less weight to pixels on image boundary.
+        This weight matrix is then used for merging individual tile predictions and helps dealing
+        with prediction artifacts on tile boundaries.
+
+        Taken from & credit to:
+            https://github.com/BloodAxe/pytorch-toolbelt/blob/f3acfca5da05cd7ccdd85e8d343d75fa40fb44d9/pytorch_toolbelt/inference/tiles.py#L16-L50
+
+        Args:
+            width: Tile width
+            height: Tile height
+        Returns:
+            The weight mask as ndarray
+        """
+        xc = width * 0.5
+        yc = height * 0.5
+        xl = 0
+        xr = width
+        yb = 0
+        yt = height
+
+        Dcx = np.square(np.arange(width) - xc + 0.5)
+        Dcy = np.square(np.arange(height) - yc + 0.5)
+        Dc = np.sqrt(Dcx[np.newaxis].transpose() + Dcy)
+
+        De_l = np.square(np.arange(width) - xl + 0.5) + np.square(0.5)
+        De_r = np.square(np.arange(width) - xr + 0.5) + np.square(0.5)
+        De_b = np.square(0.5) + np.square(np.arange(height) - yb + 0.5)
+        De_t = np.square(0.5) + np.square(np.arange(height) - yt + 0.5)
+
+        De_x = np.sqrt(np.minimum(De_l, De_r))
+        De_y = np.sqrt(np.minimum(De_b, De_t))
+        De = np.minimum(De_x[np.newaxis].transpose(), De_y)
+
+        alpha = (width * height) / np.sum(np.divide(De, np.add(Dc, De)))
+        W = alpha * np.divide(De, np.add(Dc, De))
+        return W
 
     def processAlgorithm(
-        self,
-        parameters: dict[str, Any],
-        context: QgsProcessingContext,
-        feedback: QgsProcessingMultiStepFeedback,
+            self,
+            parameters: dict[str, Any],
+            context: QgsProcessingContext,
+            feedback: QgsProcessingMultiStepFeedback,
     ) -> dict[str, Any]:
         """
         Here is where the processing itself takes place.
-        
+
         """
 
         counter = itertools.count(1)
@@ -242,20 +351,24 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback.pushInfo(f"Using CRS: {crs.description()}")
 
         session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
-        input_name = session.get_inputs()[0].name
+        input_info = session.get_inputs()[0]
+        input_name = input_info.name
+        inferred_in_shape = MODEL_CONFIG['in_shape']
+        inferred_stride = MODEL_CONFIG['stride']
+        inferred_batch_size = MODEL_CONFIG['batch_size']
 
         with rasterio.open(file_path) as src:
-            img = src.read().transpose(1, 2, 0)  # HWC
+            img = src.read()  # CHW (count, height, width)
             meta = src.meta.copy()
 
         pred = self.predict_on_array_cf(
             session,
             img,
-            in_shape=MODEL_CONFIG['in_shape'],
+            in_shape=inferred_in_shape,
             out_bands=MODEL_CONFIG['out_bands'],
-            stride=MODEL_CONFIG['stride'],
+            stride=inferred_stride,
             augmentation=MODEL_CONFIG['augmentation'],
-            batchsize=MODEL_CONFIG['batch_size'],
+            batchsize=inferred_batch_size,
             input_name=input_name
         )
 
@@ -264,9 +377,8 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
             'dtype': 'float32'
         })
 
-        
         with rasterio.open(output_raster, 'w', **meta) as dst:
-            dst.write(pred.astype(np.float32), 1)
+            dst.write(pred["prediction"][0].astype(np.float32), 1)
 
         raster_out = {'OUTPUT': output_raster}
 
