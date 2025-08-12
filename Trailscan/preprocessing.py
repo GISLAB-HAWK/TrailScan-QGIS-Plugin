@@ -345,7 +345,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         with rasterio.open(high_vegetation_outfile) as high_veg_src:
             high_veg_array = high_veg_src.read(1)   
 
-        vdi_array = low_veg_array / high_veg_array
+        with np.errstate(divide='ignore', invalid='ignore'):
+            vdi_array = np.divide(
+                low_veg_array.astype(np.float32),
+                high_veg_array.astype(np.float32),
+                out=np.zeros_like(low_veg_array, dtype=np.float32),
+                where=high_veg_array != 0,
+            )
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
