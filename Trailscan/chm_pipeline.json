@@ -1,6 +1,6 @@
 [
     {"type": "readers.las", "filename": "input.laz" },
-    {"type":"filters.hag_delaunay", "count": 5},
+    {"type":"filters.hag_nn"},
     {
         "type": "writers.gdal",
         "filename": "output_chm.tif",

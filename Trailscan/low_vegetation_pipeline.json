@@ -1,6 +1,6 @@
 [
     {"type": "readers.las", "filename": "in.laz" },
-    {"type":"filters.hag_delaunay", "count": 5},
+    {"type":"filters.hag_nn"},
     {
         "type":"filters.expression",
         "expression":"HeightAboveGround < 0.8"
