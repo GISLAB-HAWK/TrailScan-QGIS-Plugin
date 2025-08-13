@@ -271,6 +271,11 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 self.invalidSourceError(parameters, self.POINTCLOUD)
             )
 
+       # Define CREATE_NO_WINDOW only on Windows to suppress the console window
+        creationflags = 0
+        if os.name == "nt":
+            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)              
+
         crs = sourceCloud.crs().horizontalCrs()
         if not crs.isValid():
             raise QgsProcessingException("Invalid CRS in input point cloud")
@@ -280,12 +285,22 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             subprocess.run(["pdal", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         except (subprocess.CalledProcessError, FileNotFoundError):
             raise QgsProcessingException("PDAL is not installed or not found in PATH. Please install PDAL to continue.")
-        
-        feedback.setCurrentStep(next(counter))
-        if feedback.isCanceled():
-            return {}
 
-        feedback.pushInfo("Creating DTM...")
+        # Check if PDAL filter.expression is available
+        try:
+            result = subprocess.run(
+                ["pdal", "--drivers"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=creationflags,
+            )
+            if "filters.expression" not in result.stdout:
+                raise QgsProcessingException("PDAL 'filters.expression' driver is not available. Please ensure your PDAL installation includes this filter.")
+        except subprocess.CalledProcessError as e:
+            feedback.reportError(e.stderr or str(e))
+            raise QgsProcessingException("Failed to check PDAL drivers. See log for details.")
 
         # Ensure output directories exist
         for outfile in [dtm_outfile, lrm_outfile, chm_outfile, vdi_outfile, low_vegetation_outfile, high_vegetation_outfile, output_raster]:
@@ -293,10 +308,11 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             if out_dir and not os.path.isdir(out_dir):
                 os.makedirs(out_dir, exist_ok=True)
 
-       # Define CREATE_NO_WINDOW only on Windows to suppress the console window
-        creationflags = 0
-        if os.name == "nt":
-            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)                
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        feedback.pushInfo("Creating DTM...")                          
 
         # Run DTM PDAL pipeline
         dtm_pipeline_path = os.path.join(os.path.dirname(__file__), DTM_PIPELINE)
