@@ -200,17 +200,17 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         """
 
         counter = itertools.count(1)
-        count_max = 10
+        count_max = 7
         feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
         input_laz = sourceCloud.dataProvider().dataSourceUri()
-        vdi_outfile = QgsProcessingUtils.generateTempFilename("VDI.tif")
-        dtm_outfile = QgsProcessingUtils.generateTempFilename("DTM.tif")
-        lrm_outfile = QgsProcessingUtils.generateTempFilename("LRM.tif")
-        chm_outfile = QgsProcessingUtils.generateTempFilename("CHM.tif")
-        low_vegetation_outfile = QgsProcessingUtils.generateTempFilename("LowVegetation.tif")
-        high_vegetation_outfile = QgsProcessingUtils.generateTempFilename("HighVegetation.tif")
+        vdi_outfile = QgsProcessingUtils.generateTempFilename("VDI.tif", context=context)
+        dtm_outfile = QgsProcessingUtils.generateTempFilename("DTM.tif", context=context)
+        lrm_outfile = QgsProcessingUtils.generateTempFilename("LRM.tif", context=context)
+        chm_outfile = QgsProcessingUtils.generateTempFilename("CHM.tif", context=context)
+        low_vegetation_outfile = QgsProcessingUtils.generateTempFilename("LowVegetation.tif", context=context)
+        high_vegetation_outfile = QgsProcessingUtils.generateTempFilename("HighVegetation.tif", context=context)
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT_NORMALIZED, context)
 
         if sourceCloud is None:
@@ -338,7 +338,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        feedback.pushInfo("Calculating low and high vegetation...")
+        feedback.pushInfo("Calculating low vegetation...")
 
         try:
             subprocess.run(
@@ -363,6 +363,8 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
+
+        feedback.pushInfo("Calculating high vegetation...")
 
         try:
             subprocess.run(
