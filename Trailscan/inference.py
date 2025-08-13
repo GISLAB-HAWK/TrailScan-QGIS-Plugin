@@ -34,12 +34,12 @@ from sys import stdout
 
 PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
 MODEL_CONFIG = {
-    'in_shape': (4, 448, 448),  # Channels, Height, Width (match ONNX model)
+    'in_shape': (4, 224, 224),  # Channels, Height, Width (match ONNX model)
     'out_bands': 1,
     'stride': 112,
     'augmentation': True,
     'batch_size': 1,  # ONNX model expects static batch size = 1
-    'tile_size': 448,
+    'tile_size': 224,
     'overlap': 112
 }
 
