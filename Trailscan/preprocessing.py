@@ -287,8 +287,39 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo("Creating DTM...")
 
-        # Overwrite some pipeline parameters for input and output
-        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), DTM_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{dtm_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        # Ensure output directories exist
+        for outfile in [dtm_outfile, lrm_outfile, chm_outfile, vdi_outfile, low_vegetation_outfile, high_vegetation_outfile, output_raster]:
+            out_dir = os.path.dirname(outfile)
+            if out_dir and not os.path.isdir(out_dir):
+                os.makedirs(out_dir, exist_ok=True)
+
+       # Define CREATE_NO_WINDOW only on Windows to suppress the console window
+        creationflags = 0
+        if os.name == "nt":
+            creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)                
+
+        # Run DTM PDAL pipeline
+        dtm_pipeline_path = os.path.join(os.path.dirname(__file__), DTM_PIPELINE)
+        
+        try:
+            subprocess.run(
+                [
+                    "pdal", "pipeline", dtm_pipeline_path,
+                    f"--readers.las.filename={input_laz}",
+                    f"--writers.gdal.filename={dtm_outfile}",
+                    f"--writers.gdal.resolution={PIXEL_SIZE}",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=creationflags
+            )
+        except subprocess.CalledProcessError as e:
+            feedback.reportError(e.stderr or str(e))
+            raise QgsProcessingException("PDAL DTM pipeline failed. See log for details.")
+        if not os.path.exists(dtm_outfile):
+            raise QgsProcessingException(f"DTM output file was not created: {dtm_outfile}")
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -296,15 +327,35 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo("Creating CHM...")
 
-        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), CHM_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{chm_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        chm_pipeline_path = os.path.join(os.path.dirname(__file__), CHM_PIPELINE)
+        try:
+            subprocess.run(
+                [
+                    "pdal", "pipeline", chm_pipeline_path,
+                    f"--readers.las.filename={input_laz}",
+                    f"--writers.gdal.filename={chm_outfile}",
+                    f"--writers.gdal.resolution={PIXEL_SIZE}",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                creationflags=creationflags,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            feedback.reportError(e.stderr or str(e))
+            raise QgsProcessingException("PDAL CHM pipeline failed. See log for details.")
+        if not os.path.exists(chm_outfile):
+            raise QgsProcessingException(f"CHM output file was not created: {chm_outfile}")
 
-
+        # Load rasters
         with rasterio.open(chm_outfile) as chm_src:
             chm_array = chm_src.read(1)
 
         with rasterio.open(dtm_outfile) as dtm_src:
             dtm_array = dtm_src.read(1)
-            nodata_value = dtm_src.nodata
+            nodata_value = dtm_src.nodata if dtm_src.nodata is not None else 0
+
 
         # Collect information for raster creation
         transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
@@ -326,13 +377,49 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo("Calculating low and high vegetation...")
 
-        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), LOW_VEGETATION_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{low_vegetation_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        try:
+            subprocess.run(
+                [
+                    "pdal", "pipeline", os.path.join(os.path.dirname(__file__), LOW_VEGETATION_PIPELINE),
+                    f"--readers.las.filename={input_laz}",
+                    f"--writers.gdal.filename={low_vegetation_outfile}",
+                    f"--writers.gdal.resolution={PIXEL_SIZE}",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=creationflags,
+            )
+        except subprocess.CalledProcessError as e:
+            feedback.reportError(e.stderr or str(e))
+            raise QgsProcessingException("PDAL low vegetation pipeline failed. See log for details.")
+        if not os.path.exists(low_vegetation_outfile):
+            raise QgsProcessingException(f"Low vegetation output file was not created: {low_vegetation_outfile}")
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
             return {}
 
-        subprocess.call(f"pdal pipeline '{os.path.join(os.path.dirname(__file__), HIGH_VEGETATION_PIPELINE)}' --readers.las.filename='{input_laz}' --writers.gdal.filename='{high_vegetation_outfile}' --writers.gdal.resolution={PIXEL_SIZE}", shell=True)
+        try:
+            subprocess.run(
+                [
+                    "pdal", "pipeline", os.path.join(os.path.dirname(__file__), HIGH_VEGETATION_PIPELINE),
+                    f"--readers.las.filename={input_laz}",
+                    f"--writers.gdal.filename={high_vegetation_outfile}",
+                    f"--writers.gdal.resolution={PIXEL_SIZE}",
+                ],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=creationflags,
+            )
+        except subprocess.CalledProcessError as e:
+            feedback.reportError(e.stderr or str(e))
+            raise QgsProcessingException("PDAL high vegetation pipeline failed. See log for details.")
+        if not os.path.exists(high_vegetation_outfile):
+            raise QgsProcessingException(f"High vegetation output file was not created: {high_vegetation_outfile}")
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
