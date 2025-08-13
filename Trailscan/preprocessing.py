@@ -19,6 +19,7 @@ from qgis.core import (
     QgsProcessingParameterRasterDestination,
     QgsRasterLayer,  
     QgsProcessingMultiStepFeedback,  
+    QgsProcessingUtils,
 )
 from qgis.PyQt.QtGui import QIcon
 from scipy.ndimage import median_filter
@@ -46,19 +47,8 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     """
 
 
-    INPUT = "INPUT"
-    OUTPUT = "OUTPUT"
     POINTCLOUD = "POINTCLOUD"
-    EXPRESSION_DSM = "EXPRESSION_DSM"
-    EXPRESSION_DTM = "EXPRESSION_DTM"
-    OUTPUT_DTM = "OUTPUT_DTM"
-    OUTPUT_DSM = "OUTPUT_DSM"
-    OUTPUT_LRM = "OUTPUT_LRM"
-    OUTPUT_CHM = "OUTPUT_CHM"
-    OUTPUT_VDI = "OUTPUT_VDI"
     OUTPUT_NORMALIZED = "OUTPUT_NORMALIZED"
-    OUTPUT_HIGH_VEGETATION = "OUTPUT_HIGH_VEGETATION"
-    OUTPUT_LOW_VEGETATION = "OUTPUT_LOW_VEGETATION"
 
     def name(self) -> str:
         """
@@ -107,49 +97,6 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 description="Input point cloud"
             )
         )
-
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT_DTM, 
-                description="DTM"
-                )
-        ) 
-
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT_LRM,
-                description="LRM",
-            )
-        )  
-
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT_CHM,
-                description="CHM",
-            )
-        )         
-
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT_VDI, 
-                description="VDI"
-                )
-        ) 
-
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT_HIGH_VEGETATION, 
-                description="High Vegetation"
-                )
-        ) 
-
-        self.addParameter(
-            QgsProcessingParameterRasterDestination(
-                name=self.OUTPUT_LOW_VEGETATION, 
-                description="Low Vegetation"
-                )
-        ) 
-
 
         self.addParameter(
             QgsProcessingParameterRasterDestination(
@@ -258,12 +205,12 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
         input_laz = sourceCloud.dataProvider().dataSourceUri()
-        vdi_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_VDI, context)
-        dtm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_DTM, context) 
-        lrm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LRM, context)
-        chm_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_CHM, context)
-        low_vegetation_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_LOW_VEGETATION, context)
-        high_vegetation_outfile = self.parameterAsOutputLayer(parameters, self.OUTPUT_HIGH_VEGETATION, context)
+        vdi_outfile = QgsProcessingUtils.generateTempFilename("VDI.tif")
+        dtm_outfile = QgsProcessingUtils.generateTempFilename("DTM.tif")
+        lrm_outfile = QgsProcessingUtils.generateTempFilename("LRM.tif")
+        chm_outfile = QgsProcessingUtils.generateTempFilename("CHM.tif")
+        low_vegetation_outfile = QgsProcessingUtils.generateTempFilename("LowVegetation.tif")
+        high_vegetation_outfile = QgsProcessingUtils.generateTempFilename("HighVegetation.tif")
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT_NORMALIZED, context)
 
         if sourceCloud is None:
@@ -477,18 +424,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         feedback.setCurrentStep(count_max)
 
         # Register the output raster
-        dtm_out = {'OUTPUT': dtm_outfile}
-        vdi_out = {'OUTPUT': vdi_outfile}
-        lrm_out = {'OUTPUT': lrm_outfile}
-        chm_out = {'OUTPUT': chm_outfile}
         raster_out = {'OUTPUT': output_raster}
-        high_veg_out = {'OUTPUT': high_vegetation_outfile}
-        low_veg_out = {'OUTPUT': low_vegetation_outfile}    
 
-        return {self.OUTPUT_DTM: dtm_out["OUTPUT"], self.OUTPUT_LRM: lrm_out["OUTPUT"], 
-        self.OUTPUT_CHM: chm_out["OUTPUT"], 
-        self.OUTPUT_VDI: vdi_out["OUTPUT"], self.OUTPUT_NORMALIZED: raster_out["OUTPUT"],
-        self.OUTPUT_HIGH_VEGETATION: high_veg_out["OUTPUT"], self.OUTPUT_LOW_VEGETATION: low_veg_out["OUTPUT"]}
+        return {self.OUTPUT_NORMALIZED: raster_out["OUTPUT"]}
 
     def createInstance(self):
         return self.__class__()
