@@ -1,10 +1,16 @@
 [general]
 name=Trailscan
 description=Trailscan plugin
-about=About this minimal plugin
+about=Required Python packages are: <code>laspy[lazrs,laszip], rasterio, onnxruntime, scipy</code> <br> Please make sure to intall them before installing the plugin!
+
 version=0.0.1
 qgisMinimumVersion=3.40
 author=Tanja Kempen, Mathias Gröbe
 email=mail@demo
 repository=https://github.com/GISLAB-HAWK/QGIS-Dev-TrailScan
 icon=TrailScan_Logo.svg
+hasProcessingProvider=yes
+category=Point Cloud
+experimental=True
+deprecated=False
+server=False
