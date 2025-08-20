@@ -11,7 +11,7 @@ Detection of trails in LiDAR data.
 
 ### LiDAR data
 
-The data should be classified using the standard classes for point cloud data according to the LAS/LAZ file specifications. It recommended to reclassify your data if you have non standard point classes in the data. You can achice it using [PDAL](https://pdal.io/).
+The data should be classified using the standard classes for point cloud data according to the LAS/LAZ file specifications and have a valid georeference. It is necessary to have classified ground points for the processes; if missing, you can achieve it using [PDAL](https://pdal.io/).
 
 ### Installation of Python packages
 
