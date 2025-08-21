@@ -80,7 +80,10 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         """
         Returns a localised short helper string for the algorithm. 
         """
-        return "Trailscan preprocessing algorithm"
+
+        help_string = """The ALS point cloud in .laz or .las data format is opened in QGIS. With the TrailScan preprocessing tool, the point cloud is converted into a 4-band georeferenced raster image. The 4 bands represent a Digital Terrain Model (DTM) in band 1, a Canopy Height Model (CHM) in band 2, a Micro Relief Model (MRM) in band 3 and a vegetation density index (VDI) in band 4. All values are normalized to the range of 0 to 1, therefore the name of the output file is "Normalized"."""
+
+        return help_string
 
     def icon(self):
         return QIcon(os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.svg'))

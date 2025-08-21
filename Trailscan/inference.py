@@ -83,7 +83,10 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         """
         Returns a localised short helper string for the algorithm.
         """
-        return "Trailscan segmentation"
+
+        help_string = """The Normalized File gets processed with the TrailScan model. The output file is the prediction of the model that has a raster image format with values in the range of 0 to 1. Pixels with a value of 0 do not represent a skid trail. The higher the value, the higher the probability that a skid trail was found. """
+
+        return help_string
 
     def icon(self):
         return QIcon(os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.svg'))
