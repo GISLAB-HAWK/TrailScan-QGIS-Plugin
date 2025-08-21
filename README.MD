@@ -1,6 +1,10 @@
 # Trailscan QGIS-Plugin
 
-Detection of trails in LiDAR data.
+TrailScan is a Deep Learning Model which is trained to segment skid trails (syn. logging trails)  from Airborne Laser Scanning (ALS) data in Central European mixed and deciduous forests. ALS data is derived by planes, helicopters or unmanned aerial vehicles (UAV) carrying a LiDAR sensor. The 2-step TrailScan process is:
+
+1. TrailScan Preprocessing: The ALS point cloud in .laz or .las data format is opened in QGIS. With the TrailScan preprocessing tool, the point cloud is converted into a 4-band georeferenced raster image. The 4 bands represent a Digital Terrain Model (DTM) in band 1, a Canopy Height Model (CHM) in band 2, a Micro Relief Model (MRM) in band 3 and a vegetation density index (VDI) in band 4. All values are normalized to the range of 0 to 1, therefore the name of the output file is "Normalized".
+
+2. TrailScan Inference: The Normalized File gets processed with the TrailScan model. The output file is the prediction of the model that has a raster image format with values in the range of 0 to 1. Pixels with a value of 0 do not represent a skid trail. The higher the value, the higher the probability that a skid trail was found. 
 
 ## Requirements 
 
