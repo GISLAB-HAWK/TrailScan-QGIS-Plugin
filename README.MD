@@ -55,13 +55,15 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 
 - **Linux:** 
 
-  ```pip install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
+  ```bash
+  pip install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
 
 - **Windows:**  
   Open the **OSGeo4W Shell** or the **Python Console of QGIS** and run:  
 
   ```bash
   !pip install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
+
   > **Note:** On Windows, each QGIS installation has its own Python environment. You may need to reinstall the packages after updating or changing your QGIS version. 
 
 - **macOS:** 
