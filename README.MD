@@ -63,14 +63,14 @@ Open the **OSGeo4W Shell** or the **Python Console of QGIS** and run:
 - **macOS:** ```bash pip3 install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` > **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
 
 ---
-##ALS LiDAR Data: 
+## ALS LiDAR Data: 
 
 - Input data must be provided in LAS/LAZ format with a valid georeference. 
 - Point clouds should follow the standard classification scheme as defined in the LAS/LAZ specifications. Classified ground points (class 2) are required for the preprocessing step. If ground classification is missing, it can be generated using PDAL or equivalent tools. - Data should have sufficient point density for reliable DTM, CHM, MRM, and VDI derivation (minimum 6 points per m², recommended maximum 20 points per m²). 
 
 
 ---
-##Hardware Recommendations: 
+## Hardware Recommendations: 
 
 - CPU: Multi-core processor (Intel i7/i9 or AMD Ryzen recommended). 
 - RAM: Minimum 16 GB (32 GB or more recommended for large point clouds).  
