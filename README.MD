@@ -25,8 +25,11 @@ The data should be classified using the standard classes for point cloud data ac
 
 #### Windows
 
-Open the Python console of QGIS and enter 
+Open the OSGeo4W Shell or the Python console of QGIS and enter. 
 
     !pip install laspy[lazrs,laszip] rasterio onnxruntime scipy
 
-Please note that under windows each QGIS has it's own python, so you may have to reinstall the packages
+Please note that under Windows each QGIS version has it's own Python environment, so you may have to reinstall the packages
+
+#### macOS
+
