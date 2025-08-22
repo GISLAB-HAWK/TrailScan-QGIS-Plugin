@@ -54,18 +54,20 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 ## Installation of Python Packages
 
 - **Linux:** 
-```bash pip install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
+
+  ```bash pip install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
 
 - **Windows:**  
   Open the **OSGeo4W Shell** or the **Python Console of QGIS** and run:  
 
   ```bash
   !pip install laspy[lazrs,laszip] rasterio onnxruntime scipy
-> **Note:** On Windows, each QGIS installation has its own Python environment. You may need to reinstall the packages after updating or changing your QGIS version. 
+  > **Note:** On Windows, each QGIS installation has its own Python environment. You may need to reinstall the packages after updating or changing your QGIS version. 
 
 - **macOS:** 
-```bash pip3 install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
-> **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
+
+  ```bash pip3 install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
+  > **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
 
 ---
 ## ALS LiDAR Data: 
