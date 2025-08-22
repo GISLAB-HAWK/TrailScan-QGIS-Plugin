@@ -35,7 +35,7 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 ![QGIS](https://img.shields.io/badge/QGIS-3.40%2B-green?logo=qgis)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![ONNX](https://img.shields.io/badge/ONNX-runtime-orange?logo=onnx)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 
 ---
