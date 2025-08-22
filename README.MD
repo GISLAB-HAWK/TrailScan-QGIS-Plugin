@@ -53,7 +53,7 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 
 ## Installation of Python Packages
 
-**Linux:** 
+- **Linux:** 
 ```bash pip install laspy[lazrs,laszip] rasterio onnxruntime scipy ``` 
 
 **Windows:** Open the **OSGeo4W Shell** or the **Python Console of QGIS** and run: 
