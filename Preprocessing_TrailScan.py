@@ -10,12 +10,12 @@ from rasterio.transform import from_origin
 from rasterio.warp import reproject, Resampling
 
 # === Input / Output (r for reversed windows-backslash) ===
-input_laz = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_Test.laz"
-output_dtm = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_DTM.tif"
-output_chm = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_CHM.tif"
-output_lrm = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_LRM.tif"
-output_vdi = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle_VDI.tif"
-output_raster = r"F:\TrailScan\02_Daten\01_BB_Neuzelle\Neuzelle__normalized.tif"
+input_laz = r"F:\TrailScan\02_Daten\09_Testdaten\Sattelm_Test_400m.laz"
+output_dtm = r"F:\TrailScan\02_Daten\09_Testdaten\250805\Sattelm_Test_400m_DTM.tif"
+output_chm = r"F:\TrailScan\02_Daten\09_Testdaten\250805\Sattelm_Test_400m_CHM.tif"
+output_lrm = r"F:\TrailScan\02_Daten\09_Testdaten\250805\Sattelm_Test_400m_LRM.tif"
+output_vdi = r"F:\TrailScan\02_Daten\09_Testdaten\250805\Sattelm_Test_400m_VDI.tif"
+output_raster = r"F:\TrailScan\02_Daten\09_Testdaten\Sattelm_Test_400m_normalized.tif"
 resolution = 0.38  # Resolution (raster width)
 
 # === Function: Calculate uniform extent and transform ===

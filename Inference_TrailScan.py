@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 # Define paths
 MODEL_PATH = Path(r"F:\TrailScan\04_Models\TrailScan.pt")
-INPUT_PATH = Path(r"F:\TrailScan\02_Daten\04_NS_Solling\2Solling_normalized.tif")
-OUTPUT_PATH = Path(r"F:\TrailScan\02_Daten\04_NS_Solling\2Solling_result.tif")
+INPUT_PATH = Path(r"F:\TrailScan\09_BDF\Grossburschla_norm.tif")
+OUTPUT_PATH = Path(r"F:\TrailScan\09_BDF\Grossburschla_result.tif")
 
 # Model configuration
 MODEL_CONFIG = {

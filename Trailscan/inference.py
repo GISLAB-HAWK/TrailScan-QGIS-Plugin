@@ -10,6 +10,7 @@
 """
 
 from typing import Any, Optional
+
 from qgis.core import (
     QgsProcessingAlgorithm,
     QgsProcessingContext,
@@ -44,29 +45,58 @@ MODEL_CONFIG = {
 
 
 class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
+    """
+
+    """
+
     INPUT = "INPUT"
     OUTPUT = "OUTPUT"
     MODEL_FILE = "MODEL_FILE"
 
     def name(self) -> str:
+        """
+        Returns the algorithm name
+        """
         return "inference"
 
     def displayName(self) -> str:
+        """
+        Returns the translated algorithm name, which should be used for any
+        user-visible display of the algorithm name.
+        """
         return "02 Inference"
 
     def group(self) -> str:
+        """
+        Returns the name of the group this algorithm belongs to. This string
+        should be localised.
+        """
         return ""
 
     def groupId(self) -> str:
+        """
+        Returns the unique ID of the group this algorithm belongs to.
+        """
         return ""
 
     def shortHelpString(self) -> str:
-        return "Trailscan segmentation"
+        """
+        Returns a localised short helper string for the algorithm.
+        """
+
+        help_string = """The Normalized File gets processed with the TrailScan model. The output file is the prediction of the model that has a raster image format with values in the range of 0 to 1. Pixels with a value of 0 do not represent a skid trail. The higher the value, the higher the probability that a skid trail was found. """
+
+        return help_string
 
     def icon(self):
         return QIcon(os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.svg'))
 
     def initAlgorithm(self, config: Optional[dict[str, Any]] = None):
+        """
+        Here we define the inputs and output of the algorithm, along
+        with some other properties.
+        """
+
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
@@ -92,13 +122,180 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
             )
         )
 
-    # ---------- Prediction Helper Methods ----------
     def predict_batch_onnx(self, session, input_name, batch: np.ndarray) -> np.ndarray:
         inputs = {input_name: batch.astype(np.float32)}
         outputs = session.run(None, inputs)
-        return outputs[0]
+        return outputs[0]  # Shape: (N, C, H, W)
+
+    def predict_on_array_cf(self, model,
+                            arr,
+                            in_shape,
+                            out_bands,
+                            stride=None,
+                            drop_border=0,
+                            batchsize=64,
+                            dtype="float32",
+                            device="cpu",
+                            augmentation=False,
+                            no_data=None,
+                            verbose=False,
+                            aggregate_metric=False,
+                            input_name=None):
+        """
+        Applies a ONNX segmentation model to an array in a strided manner.
+        Channels first version.
+
+        Args:
+            model: ONNX InferenceSession
+            arr: CHW array for which the segmentation should be created
+            stride: stride with which the model should be applied. Default: output size
+            batchsize: number of images to process in parallel
+            dtype: desired output type (default: float32)
+            augmentation: whether to average over rotations and mirrorings of the image or not.
+            no_data: a no-data value. It's used to compute the area containing data via the first input image channel.
+            verbose: whether or not to display progress
+            input_name: ONNX input tensor name
+
+        Returns:
+            dict with prediction, time, nodata_region and metric
+        """
+        t0 = time.time()
+        metric = 0
+
+        if augmentation:
+            operations = (lambda x: x,
+                          lambda x: np.rot90(x, 1, axes=(1, 2)),
+                          lambda x: np.flip(x, 1))
+            inverse = (lambda x: x,
+                       lambda x: np.rot90(x, -1, axes=(1, 2)),
+                       lambda x: np.flip(x, 1))
+        else:
+            operations = (lambda x: x,)
+            inverse = (lambda x: x,)
+
+        assert in_shape[1] == in_shape[2], "Input shape must be square."
+        out_shape = (out_bands, in_shape[1] - 2 * drop_border, in_shape[2] - 2 * drop_border)
+        in_size = in_shape[1]
+        out_size = out_shape[1]
+        stride = stride or out_size
+        pad = (in_size - out_size) // 2
+        assert pad % 2 == 0, "Model input and output shapes must have pad divisible by 2."
+
+        original_size = arr.shape
+        ymin, xmin = 0, 0
+        ymax, xmax = arr.shape[1], arr.shape[2]
+
+        if no_data is not None:
+            nonzero = np.nonzero(arr[0, :, :] != no_data)
+            if len(nonzero[0]) == 0:
+                return {"prediction": None,
+                        "time": time.time() - t0,
+                        "nodata_region": (0, 0, 0, 0),
+                        "metric": metric}
+            ymin = int(np.min(nonzero[0]))
+            ymax = int(np.max(nonzero[0]))
+            xmin = int(np.min(nonzero[1]))
+            xmax = int(np.max(nonzero[1]))
+            img = arr[:, ymin:ymax, xmin:xmax]
+        else:
+            img = arr
+
+        weight_mask = self.compute_pyramid_patch_weight_loss(out_size, out_size)
+        final_output = np.zeros((out_bands,) + img.shape[1:], dtype=dtype)
+
+        op_cnt = 0
+        for op, inv in zip(operations, inverse):
+            img_aug = op(img)
+            img_shape = img_aug.shape
+
+            x_tiles = int(np.ceil(img_shape[2] / stride))
+            y_tiles = int(np.ceil(img_shape[1] / stride))
+
+            y_range = range(0, (y_tiles + 1) * stride - out_size, stride)
+            x_range = range(0, (x_tiles + 1) * stride - out_size, stride)
+
+            y_pad_after = y_range[-1] + in_size - img_shape[1] - pad
+            x_pad_after = x_range[-1] + in_size - img_shape[2] - pad
+
+            output = np.zeros((out_bands,) + (img_shape[1] + y_pad_after - pad, img_shape[2] + x_pad_after - pad),
+                              dtype=dtype)
+            division_mask = np.zeros(output.shape[1:], dtype=dtype) + 1E-7
+            img_padded = np.pad(img_aug, ((0, 0), (pad, y_pad_after), (pad, x_pad_after)), mode='reflect')
+
+            patches = len(y_range) * len(x_range)
+
+            def patch_generator():
+                for y in y_range:
+                    for x in x_range:
+                        yield img_padded[:, y:y + in_size, x:x + in_size]
+
+            patch_gen = patch_generator()
+
+            y = 0
+            x = 0
+            patch_idx = 0
+            batchsize_ = batchsize
+
+            while patch_idx < patches:
+                batchsize_ = min(batchsize_, patches, patches - patch_idx)
+                patch_idx += batchsize_
+                if verbose:
+                    stdout.write("\r%.2f%%" % (100 * (patch_idx + op_cnt * patches) / (len(operations) * patches)))
+
+                batch = np.zeros((batchsize_,) + in_shape, dtype=dtype)
+                for j in range(batchsize_):
+                    batch[j] = next(patch_gen)
+
+                prediction = self.predict_batch_onnx(model, input_name, batch)
+                if drop_border > 0:
+                    prediction = prediction[:, :, drop_border:-drop_border, drop_border:-drop_border]
+
+                for j in range(batchsize_):
+                    output[:, y:y + out_size, x:x + out_size] += prediction[j] * weight_mask[None, ...]
+                    division_mask[y:y + out_size, x:x + out_size] += weight_mask
+                    x += stride
+                    if x + out_size > output.shape[2]:
+                        x = 0
+                        y += stride
+
+            output = output / division_mask[None, ...]
+            output = inv(output[:, :img_shape[1], :img_shape[2]])
+            final_output += output
+            op_cnt += 1
+            if verbose:
+                stdout.write("\rAugmentation step %d/%d done.\n" % (op_cnt, len(operations)))
+
+        if verbose:
+            stdout.flush()
+
+        final_output = final_output / len(operations)
+
+        if no_data is not None:
+            final_output = np.pad(final_output,
+                                  ((0, 0), (ymin, original_size[1] - ymax), (xmin, original_size[2] - xmax)),
+                                  mode='constant',
+                                  constant_values=0)
+
+        return {"prediction": final_output,
+                "time": time.time() - t0,
+                "nodata_region": (ymin, ymax, xmin, xmax),
+                "metric": metric}
 
     def compute_pyramid_patch_weight_loss(self, width: int, height: int) -> np.ndarray:
+        """Compute a weight matrix that assigns bigger weight on pixels in center and
+        less weight to pixels on image boundary.
+        This weight matrix is then used for merging individual tile predictions and helps dealing
+        with prediction artifacts on tile boundaries.
+
+        Taken from & credit to:
+            https://github.com/BloodAxe/pytorch-toolbelt/blob/f3acfca5da05cd7ccdd85e8d343d75fa40fb44d9/pytorch_toolbelt/inference/tiles.py#L16-L50
+
+        Args:
+            width: Tile width
+            height: Tile height
+        Returns:
+            The weight mask as ndarray
+        """
         xc = width * 0.5
         yc = height * 0.5
         xl = 0
@@ -123,166 +320,76 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         W = alpha * np.divide(De, np.add(Dc, De))
         return W
 
-    def predict_on_array_cf(self, model,
-                            arr,
-                            in_shape,
-                            out_bands,
-                            stride=None,
-                            drop_border=0,
-                            batchsize=64,
-                            dtype="float32",
-                            device="cpu",
-                            augmentation=False,
-                            no_data=None,
-                            verbose=False,
-                            aggregate_metric=False,
-                            input_name=None):
-        t0 = time.time()
-        metric = 0
-
-        operations, inverse = (lambda x: x,), (lambda x: x,)
-        if augmentation:
-            operations = (lambda x: x,
-                          lambda x: np.rot90(x, 1, axes=(1, 2)),
-                          lambda x: np.flip(x, 1))
-            inverse = (lambda x: x,
-                       lambda x: np.rot90(x, -1, axes=(1, 2)),
-                       lambda x: np.flip(x, 1))
-
-        assert in_shape[1] == in_shape[2], "Input shape must be square."
-        out_shape = (out_bands, in_shape[1] - 2 * drop_border, in_shape[2] - 2 * drop_border)
-        in_size = in_shape[1]
-        out_size = out_shape[1]
-        stride = stride or out_size
-        pad = (in_size - out_size) // 2
-        assert pad % 2 == 0, "Model input and output shapes must have pad divisible by 2."
-
-        original_size = arr.shape
-        ymin, xmin = 0, 0
-        ymax, xmax = arr.shape[1], arr.shape[2]
-
-        if no_data is not None:
-            nonzero = np.nonzero(arr[0, :, :] != no_data)
-            if len(nonzero[0]) == 0:
-                return {"prediction": None,
-                        "time": time.time() - t0,
-                        "nodata_region": (0, 0, 0, 0),
-                        "metric": metric}
-            ymin, ymax = int(np.min(nonzero[0])), int(np.max(nonzero[0]))
-            xmin, xmax = int(np.min(nonzero[1])), int(np.max(nonzero[1]))
-            img = arr[:, ymin:ymax, xmin:xmax]
-        else:
-            img = arr
-
-        weight_mask = self.compute_pyramid_patch_weight_loss(out_size, out_size)
-        final_output = np.zeros((out_bands,) + img.shape[1:], dtype=dtype)
-
-        for op_cnt, (op, inv) in enumerate(zip(operations, inverse)):
-            img_aug = op(img)
-            img_shape = img_aug.shape
-
-            x_tiles = int(np.ceil(img_shape[2] / stride))
-            y_tiles = int(np.ceil(img_shape[1] / stride))
-
-            y_range = range(0, (y_tiles + 1) * stride - out_size, stride)
-            x_range = range(0, (x_tiles + 1) * stride - out_size, stride)
-
-            y_pad_after = y_range[-1] + in_size - img_shape[1] - pad
-            x_pad_after = x_range[-1] + in_size - img_shape[2] - pad
-
-            output = np.zeros((out_bands,) + (img_shape[1] + y_pad_after - pad, img_shape[2] + x_pad_after - pad),
-                              dtype=dtype)
-            division_mask = np.zeros(output.shape[1:], dtype=dtype) + 1E-7
-            img_padded = np.pad(img_aug, ((0, 0), (pad, y_pad_after), (pad, x_pad_after)), mode='reflect')
-
-            patches = len(y_range) * len(x_range)
-            patch_gen = (img_padded[:, y:y + in_size, x:x + in_size] for y in y_range for x in x_range)
-            y_idx = x_idx = 0
-            patch_idx = 0
-
-            while patch_idx < patches:
-                bsize = min(batchsize, patches - patch_idx)
-                batch_idx_range = range(patch_idx, patch_idx + bsize)
-                batch = np.stack([next(patch_gen) for _ in batch_idx_range], axis=0)
-                prediction = self.predict_batch_onnx(model, input_name, batch)
-                if drop_border > 0:
-                    prediction = prediction[:, :, drop_border:-drop_border, drop_border:-drop_border]
-                for j in range(bsize):
-                    output[:, y_idx:y_idx + out_size, x_idx:x_idx + out_size] += prediction[j] * weight_mask[None, ...]
-                    division_mask[y_idx:y_idx + out_size, x_idx:x_idx + out_size] += weight_mask
-                    x_idx += stride
-                    if x_idx + out_size > output.shape[2]:
-                        x_idx = 0
-                        y_idx += stride
-                patch_idx += bsize
-
-            output /= division_mask[None, ...]
-            output = inv(output[:, :img_shape[1], :img_shape[2]])
-            final_output += output
-
-        final_output /= len(operations)
-        if no_data is not None:
-            final_output = np.pad(final_output,
-                                  ((0, 0), (ymin, original_size[1] - ymax), (xmin, original_size[2] - xmax)),
-                                  mode='constant', constant_values=0)
-
-        return {"prediction": final_output,
-                "time": time.time() - t0,
-                "nodata_region": (ymin, ymax, xmin, xmax),
-                "metric": metric}
-
-    # ---------- Main Processing ----------
     def processAlgorithm(
             self,
             parameters: dict[str, Any],
             context: QgsProcessingContext,
             feedback: QgsProcessingMultiStepFeedback,
     ) -> dict[str, Any]:
+        """
+        Here is where the processing itself takes place.
 
-        feedback.pushInfo("Starting Trailscan inference...")
+        """
+
+        counter = itertools.count(1)
+        count_max = 12
+        feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         source = self.parameterAsRasterLayer(parameters, self.INPUT, context)
         model_path = self.parameterAsFile(parameters, self.MODEL_FILE, context)
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT, context)
 
         if source is None:
-            raise QgsProcessingException(self.invalidSourceError(parameters, self.INPUT))
+            raise QgsProcessingException(
+                self.invalidSourceError(parameters, self.INPUT)
+            )
 
-        feedback.pushInfo(f"Loading ONNX model from {model_path}...")
+        if not os.path.isfile(model_path):
+            raise QgsProcessingException(f"Model file does not exist: {model_path}")
+
+        crs = source.crs().horizontalCrs()
+        if not crs.isValid():
+            raise QgsProcessingException("Invalid CRS in input raster")
+
+        file_path = source.source()
+
+        feedback.pushInfo(f"Using CRS: {crs.description()}")
+
         session = ort.InferenceSession(model_path, providers=['CPUExecutionProvider'])
-        input_name = session.get_inputs()[0].name
+        input_info = session.get_inputs()[0]
+        input_name = input_info.name
+        inferred_in_shape = MODEL_CONFIG['in_shape']
+        inferred_stride = MODEL_CONFIG['stride']
+        inferred_batch_size = MODEL_CONFIG['batch_size']
 
-        feedback.pushInfo(f"Reading raster data from {source.source()}...")
-        with rasterio.open(source.source()) as src:
-            arr = src.read().astype(np.float32)
+        with rasterio.open(file_path) as src:
+            img = src.read()  # CHW (count, height, width)
+            meta = src.meta.copy()
 
-        feedback.pushInfo("Running prediction...")
-        result_dict = self.predict_on_array_cf(
-            model=session,
-            arr=arr,
-            in_shape=MODEL_CONFIG['in_shape'],
+        pred = self.predict_on_array_cf(
+            session,
+            img,
+            in_shape=inferred_in_shape,
             out_bands=MODEL_CONFIG['out_bands'],
-            stride=MODEL_CONFIG['stride'],
-            batchsize=MODEL_CONFIG['batch_size'],
+            stride=inferred_stride,
             augmentation=MODEL_CONFIG['augmentation'],
+            batchsize=inferred_batch_size,
             input_name=input_name
         )
 
-        prediction = result_dict["prediction"]
-        if prediction is None:
-            feedback.reportError("No prediction could be made.")
-            return {}
-
-        feedback.pushInfo("Writing prediction to output raster...")
-        meta = src.meta.copy()
         meta.update({
-            "driver": "GTiff",
-            "count": prediction.shape[0],
-            "dtype": prediction.dtype
+            'count': 1,
+            'dtype': 'float32'
         })
 
-        with rasterio.open(output_raster, "w", **meta) as dst:
-            dst.write(prediction)
+        with rasterio.open(output_raster, 'w', **meta) as dst:
+            dst.write(pred["prediction"][0].astype(np.float32), 1)
 
-        feedback.pushInfo("Inference completed successfully.")
-        return {self.OUTPUT: output_raster}
+        raster_out = {'OUTPUT': output_raster}
+
+        feedback.pushInfo(f"Output raster created: {output_raster}")
+
+        return {self.OUTPUT: raster_out['OUTPUT']}
+
+    def createInstance(self):
+        return self.__class__()
