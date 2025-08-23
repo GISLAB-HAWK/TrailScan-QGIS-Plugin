@@ -404,6 +404,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 out=np.zeros_like(low_veg_array, dtype=np.float32),
                 where=high_veg_array != 0,
             )
+
+        vdi_array = np.where(vdi_array == 0, 0.1, vdi_array)
+
         self.create_single_raster(vdi_array, transform, vdi_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
