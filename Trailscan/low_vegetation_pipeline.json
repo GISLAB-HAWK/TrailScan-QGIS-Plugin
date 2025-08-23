@@ -13,7 +13,7 @@
         "power": 1,  
         "window_size": 5,  
         "data_type": "float32",
-        "nodata": -9999,
+        "nodata": 0,
         "dimension": "HeightAboveGround"  
     }
 ]
