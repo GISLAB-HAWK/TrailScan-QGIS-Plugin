@@ -2,7 +2,7 @@
 
 **TrailScan** is a deep learning model designed to automatically detect and segment **skid trails (logging trails)** from **Airborne Laser Scanning (ALS)** data in Central European mixed and deciduous forests.  
 
-ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. The TrailScan QGIS Plugin workflow consists of two main steps:
+ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. The **TrailScan QGIS Plugin** workflow consists of two main steps:
 
 ---
 
