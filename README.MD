@@ -38,13 +38,15 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 ## Software
 
 - **QGIS** 3.40 or newer  
-- **Python packages:**
-  - `laspy[lazrs,laszip]`
+- **PDAL** installed in QGIS environment (via OSGEO on Windows or in the Conda environment under Linux ... tbc)
+- **Python packages are installed :**
+  - `numpy`
+  - `scipy`
+  - `laspy`
+  - `lazrs`
   - `rasterio`
   - `onnxruntime`
-  - `scipy`
-  - `pdal`
-
+ 
 ---
 
 ## Installation of Python Packages
