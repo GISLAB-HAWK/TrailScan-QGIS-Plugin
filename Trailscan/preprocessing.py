@@ -208,6 +208,9 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
         input_laz = sourceCloud.dataProvider().dataSourceUri()
+        # Normalize provider URI for PDAL CLI and local reads
+        if isinstance(input_laz, str) and input_laz.lower().startswith("pdal://"):
+            input_laz = input_laz[len("pdal://"):]
         vdi_outfile = QgsProcessingUtils.generateTempFilename("VDI.tif", context=context)
         dtm_outfile = QgsProcessingUtils.generateTempFilename("DTM.tif", context=context)
         lrm_outfile = QgsProcessingUtils.generateTempFilename("LRM.tif", context=context)
@@ -321,10 +324,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         with rasterio.open(dtm_outfile) as dtm_src:
             dtm_array = dtm_src.read(1)
             nodata_value = dtm_src.nodata if dtm_src.nodata is not None else 0
+            # Use DTM as authoritative grid
+            transform = dtm_src.transform
+            height = dtm_src.height
+            width = dtm_src.width
 
 
-        # Collect information for raster creation
-        transform, width, height = self.calculate_extent_and_transform(input_laz, PIXEL_SIZE)
+        # Grid information already taken from DTM raster
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
