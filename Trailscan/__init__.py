@@ -23,12 +23,22 @@ def classFactory(iface):
     try:
         # Try to import packages_installer_dialog using relative import
         from . import packages_installer_dialog
-        packages_installer_dialog.check_required_packages_and_install_if_necessary(iface=iface)
+        # Defer package check to avoid blocking UI during plugin load
+        try:
+            from qgis.PyQt import QtCore
+            QtCore.QTimer.singleShot(100, lambda: packages_installer_dialog.check_required_packages_and_install_if_necessary(iface=iface))
+        except Exception:
+            # If Qt not available for some reason, fall back to direct call
+            packages_installer_dialog.check_required_packages_and_install_if_necessary(iface=iface)
     except ImportError:
         try:
             # Fallback to absolute import
             import packages_installer_dialog
-            packages_installer_dialog.check_required_packages_and_install_if_necessary(iface=iface)
+            try:
+                from qgis.PyQt import QtCore
+                QtCore.QTimer.singleShot(100, lambda: packages_installer_dialog.check_required_packages_and_install_if_necessary(iface=iface))
+            except Exception:
+                packages_installer_dialog.check_required_packages_and_install_if_necessary(iface=iface)
         except ImportError as e:
             # If both fail, log error but continue
             print(f"Warning: Could not import packages_installer_dialog: {e}")
