@@ -48,6 +48,7 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
   - `rasterio`
   - `onnxruntime`
   - `scipy`
+  - `pdal`
 
 ---
 
