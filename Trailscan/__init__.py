@@ -9,7 +9,6 @@
 # (at your option) any later version.
 
 #---------------------------------------------------------------------
-
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QMessageBox
 from qgis.core import QgsApplication, QgsProcessingProvider, Qgis

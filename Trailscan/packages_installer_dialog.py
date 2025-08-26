@@ -22,6 +22,7 @@ Modifications have been made by Tanja Kempen / TrailScan in 2025:
  - Adapted for use in the TrailScan QGIS plugin
 """
 
+
 import importlib
 import logging
 import os
