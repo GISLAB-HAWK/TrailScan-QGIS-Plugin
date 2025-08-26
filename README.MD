@@ -4,8 +4,6 @@
 
 ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. The **TrailScan QGIS Plugin** workflow consists of two main steps:
 
----
-
 ## 1. TrailScan Preprocessing
 
 - **Input:** ALS point clouds in `.laz` or `.las` format are opened directly in QGIS.  
@@ -15,8 +13,6 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
   - **Band 3:** Micro-Relief Model (MRM)  
   - **Band 4:** Vegetation Density Index (VDI)  
 - All raster values are **normalized to a range between 0 and 1**, which is why the output is named the *Normalized File*.  
-
----
 
 ## 2. TrailScan Inference
 
