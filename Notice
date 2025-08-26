@@ -1,0 +1,17 @@
+NOTICE
+
+This project includes code from the QGIS plugin "Deepness"
+(https://github.com/PUTvision/qgis-plugin-deepness, licensed under the Apache License, Version 2.0).
+
+Copyright (c) 2021-2025 PUT vision, Przemyslaw Aszkowski
+
+Modifications have been made by Tanja Kempen / TrailScan in 2025:
+- Adapted for use in the TrailScan QGIS plugin of two scipts:
+- packages_installer_dialog.py
+- packages_installer_dialog.ui
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0

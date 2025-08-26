@@ -2,9 +2,7 @@
 
 **TrailScan** is a deep learning model designed to automatically detect and segment **skid trails (logging trails)** from **Airborne Laser Scanning (ALS)** data in Central European mixed and deciduous forests.  
 
-ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. The TrailScan QGIS Plugin workflow consists of two main steps:
-
----
+ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. The **TrailScan QGIS Plugin** workflow consists of two main steps:
 
 ## 1. TrailScan Preprocessing
 
@@ -15,8 +13,6 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
   - **Band 3:** Micro-Relief Model (MRM)  
   - **Band 4:** Vegetation Density Index (VDI)  
 - All raster values are **normalized to a range between 0 and 1**, which is why the output is named the *Normalized File*.  
-
----
 
 ## 2. TrailScan Inference
 
@@ -34,7 +30,6 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 
 ![QGIS](https://img.shields.io/badge/QGIS-3.40%2B-green?logo=qgis)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
-![ONNX](https://img.shields.io/badge/ONNX-runtime-orange?logo=onnx)
 ![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 
@@ -43,12 +38,15 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 ## Software
 
 - **QGIS** 3.40 or newer  
-- **Python packages:**
-  - `laspy[lazrs,laszip]`
+- **PDAL** installed in QGIS environment (via OSGEO on Windows or in the Conda environment under Linux ... tbc)
+- **Python packages are installed :**
+  - `numpy`
+  - `scipy`
+  - `laspy`
+  - `lazrs`
   - `rasterio`
   - `onnxruntime`
-  - `scipy`
-
+ 
 ---
 
 ## Installation of Python Packages
