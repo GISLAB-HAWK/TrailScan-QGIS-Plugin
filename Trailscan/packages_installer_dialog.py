@@ -123,16 +123,40 @@ for lib, ver in libraries_versions.items():
     import_name = REQ_IMPORT_MAP.get(lib, lib)
     packages_to_install.append(PackageToInstall(name=lib, version=ver, import_name=import_name))
 
-# Try to detect if we're running in QGIS and use the appropriate Python executable
-try:
-    import qgis.core
-    # We're in QGIS, use QGIS Python
-    PYTHON_EXECUTABLE_PATH = sys.executable
-    print(f"TrailScan: Running in QGIS, using Python: {PYTHON_EXECUTABLE_PATH}")
-except ImportError:
-    # Not in QGIS, use system Python
-    PYTHON_EXECUTABLE_PATH = sys.executable
-    print(f"TrailScan: Not in QGIS, using Python: {PYTHON_EXECUTABLE_PATH}")
+# Determine correct Python executable, especially on Windows/QGIS where sys.executable may be qgis-bin.exe
+
+def _find_embedded_python_executable() -> str:
+    exe = sys.executable or ""
+    try:
+        import qgis.core  # type: ignore
+        prefix = qgis.core.QgsApplication.prefixPath()
+        candidates = []
+        if os.name == 'nt':
+            # Typical QGIS layouts on Windows
+            candidates.extend([
+                os.path.join(prefix, 'bin', 'python.exe'),
+                os.path.join(prefix, 'apps', 'Python39', 'python.exe'),
+                os.path.join(prefix, 'apps', 'Python310', 'python.exe'),
+                os.path.join(prefix, 'apps', 'Python311', 'python.exe'),
+                os.path.join(os.path.dirname(exe), 'python.exe'),  # near qgis-bin.exe
+            ])
+        else:
+            # On non-Windows, sys.executable is usually fine
+            candidates.append(exe)
+        for cand in candidates:
+            if cand and os.path.exists(cand) and os.path.basename(cand).lower().startswith('python'):
+                return cand
+        # Fallbacks
+        return exe
+    except Exception:
+        return exe
+
+PYTHON_EXECUTABLE_PATH = _find_embedded_python_executable()
+print(f"TrailScan: Using Python executable: {PYTHON_EXECUTABLE_PATH}")
+
+# Windows-specific subprocess flag to avoid popping new windows
+WINDOWS = (os.name == 'nt')
+CREATIONFLAGS = getattr(subprocess, 'CREATE_NO_WINDOW', 0) if WINDOWS else 0
 
 
 class PackagesInstallerDialog(QDialog, FORM_CLASS):
@@ -150,6 +174,16 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.setupUi(self)
         self.iface = iface
         self.tb = self.textBrowser_log  # type: QTextBrowser
+        # Harden the log widget to avoid accidental interactions being treated by QGIS as data sources
+        try:
+            # Prevent opening links or accepting drops that could be interpreted by QGIS
+            self.tb.setOpenExternalLinks(False)
+            self.tb.setOpenLinks(False)
+            self.tb.setAcceptDrops(False)
+            self.setAcceptDrops(False)
+        except Exception:
+            # If running outside of full Qt env, ignore
+            pass
         self._create_connections()
         self._setup_message()
         self.aborted = False
@@ -190,8 +224,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.log('<b>If packages are missing, try the following:</b>')
         self.log('1. Check if you have internet connection')
         self.log('2. Try running QGIS as administrator')
-        self.log('3. Update pip: python -m pip install --upgrade pip')
-        self.log('4. Install packages manually: pip install numpy scipy laspy lazrs rasterio onnxruntime')
+        self.log('3. Update pip: <code>python -m pip install --upgrade pip</code>')
+        self.log('4. Install packages manually in a terminal (do not paste into QGIS):')
+        self.log('<code>python -m pip install --user numpy scipy laspy lazrs rasterio onnxruntime</code>')
         self.log('5. Check QGIS Python environment settings')
 
     def _log_line(self, txt):
@@ -299,6 +334,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                               stdout=subprocess.PIPE,
                               universal_newlines=True,
                               stderr=subprocess.STDOUT,
+                              creationflags=CREATIONFLAGS,
                               env={'SETUPTOOLS_USE_DISTUTILS': 'stdlib'}) as process:
             try:
                 self._do_process_output_logging(process)
@@ -331,7 +367,8 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                     with subprocess.Popen(cmd,
                                           stdout=subprocess.PIPE,
                                           universal_newlines=True,
-                                          stderr=subprocess.STDOUT) as process:
+                                          stderr=subprocess.STDOUT,
+                                          creationflags=CREATIONFLAGS) as process:
                         # Set a reasonable timeout (5 minutes)
                         try:
                             self._do_process_output_logging(process)
@@ -446,9 +483,10 @@ def check_qgis_python_packages():
 
 def check_pip_installed() -> bool:
     try:
-        subprocess.check_output([PYTHON_EXECUTABLE_PATH, '-m', 'pip', '--version'])
-        return True
-    except subprocess.CalledProcessError:
+        res = subprocess.run([PYTHON_EXECUTABLE_PATH, '-m', 'pip', '--version'],
+                             capture_output=True, text=True, creationflags=CREATIONFLAGS)
+        return res.returncode == 0
+    except Exception:
         return False
 
 
@@ -464,7 +502,7 @@ def _try_system_installation() -> bool:
                 cmd = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', '--user', f"{pck}"]
                 print(f"TrailScan: Installing {pck.name}...")
                 
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300, creationflags=CREATIONFLAGS)
                 if result.returncode == 0:
                     print(f"TrailScan: Successfully installed {pck.name}")
                     success_count += 1
@@ -477,7 +515,7 @@ def _try_system_installation() -> bool:
                 # Try to kill any hanging pip processes
                 try:
                     subprocess.run(['taskkill', '/f', '/im', 'python.exe'], 
-                                  capture_output=True, timeout=10)
+                                  capture_output=True, timeout=10, creationflags=CREATIONFLAGS)
                 except:
                     pass
                 # Continue with other packages
@@ -660,13 +698,13 @@ def debug_python_paths():
     # Test PATH-based Python
     print("\nTesting PATH-based Python:")
     try:
-        result = subprocess.run(["python", "--version"], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(["python", "--version"], capture_output=True, text=True, timeout=5, creationflags=CREATIONFLAGS)
         print(f"  python: {result.stdout.strip() if result.returncode == 0 else 'Not found'}")
     except Exception as e:
         print(f"  python: Error - {e}")
     
     try:
-        result = subprocess.run(["python3", "--version"], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(["python3", "--version"], capture_output=True, text=True, timeout=5, creationflags=CREATIONFLAGS)
         print(f"  python3: {result.stdout.strip() if result.returncode == 0 else 'Not found'}")
     except Exception as e:
         print(f"  python3: Error - {e}")
