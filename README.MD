@@ -2,7 +2,19 @@
 
 **TrailScan** is a deep learning model designed to automatically detect and segment **skid trails (logging trails)** from **Airborne Laser Scanning (ALS)** data in Central European mixed and deciduous forests.  
 
-ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. The **TrailScan QGIS Plugin** workflow consists of two main steps:
+ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. To ensure TrailScan compatibility, we recommend the following ALS input criteria:
+- LAS/LAZ format with a valid georeference
+- Point clouds should follow the standard classification scheme as defined in the LAS/LAZ specifications. Classified ground points (class 2) are required for the preprocessing step. If ground classification is missing, it can be generated using PDAL or equivalent tools. 
+- Data should have sufficient point density for reliable DTM, CHM, MRM, and VDI derivation (minimum 6 points per m², recommended maximum 20 points per m²). 
+
+For Germany, TrailScan was tested with free ALS data provided by the authorities of: 
+- Bavaria (add link)
+- Thuringia (add link)
+- Saxony (add link)
+- Brandenburg (add link)
+- Rhineland-Pfalz - here you need to merge the lpg.laz and lpo.laz files first, which can be done with QGIS (add link)
+
+**The TrailScan QGIS Plugin** workflow consists of two main steps:
 
 ## 1. TrailScan Preprocessing
 
@@ -64,9 +76,7 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 ---
 ## ALS LiDAR Data: 
 
-- Input data must be provided in LAS/LAZ format with a valid georeference. 
-- Point clouds should follow the standard classification scheme as defined in the LAS/LAZ specifications. Classified ground points (class 2) are required for the preprocessing step. If ground classification is missing, it can be generated using PDAL or equivalent tools. 
-- Data should have sufficient point density for reliable DTM, CHM, MRM, and VDI derivation (minimum 6 points per m², recommended maximum 20 points per m²). 
+
 
 
 ---
