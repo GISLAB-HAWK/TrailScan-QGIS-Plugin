@@ -1,4 +1,4 @@
-# TrailScan QGIS Plugin
+# About the TrailScan QGIS Plugin
 
 **TrailScan** is a deep learning model designed to automatically detect and segment **skid trails (logging trails)** from **Airborne Laser Scanning (ALS)** data in Central European mixed and deciduous forests.  
 
@@ -14,7 +14,9 @@ For Germany, TrailScan was tested with free ALS data provided by the authorities
 - Brandenburg (add link)
 - Rhineland-Pfalz - here you need to merge the lpg.laz and lpo.laz files first, which can be done with QGIS (add link)
 
-**The TrailScan QGIS Plugin** workflow consists of two main steps:
+---
+
+## Workflow - Instructions
 
 ## 1. TrailScan Preprocessing
 
@@ -53,7 +55,7 @@ For Germany, TrailScan was tested with free ALS data provided by the authorities
 - Open the OSGeo4W Shell (from the Start Menu).
 - Run:
 
-`pdal --version`
+  `pdal --version`
 
 - This confirms the PDAL version used by QGIS.
 
@@ -61,9 +63,9 @@ For Germany, TrailScan was tested with free ALS data provided by the authorities
 - Do not use the standard Windows Command Prompt or PowerShell for PDAL checks unless you installed PDAL system-wide.
 - On Linux and macOS, you can simply use:
 
-`pdal --version`
+  `pdal --version`
 
-> **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
+  > **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
 
 **Additional Python packages are installed automatically with the plugin installation:**
   - `numpy`
@@ -72,13 +74,6 @@ For Germany, TrailScan was tested with free ALS data provided by the authorities
   - `lazrs`
   - `rasterio`
   - `onnxruntime`
- 
----
-## ALS LiDAR Data: 
-
-
-
-
 ---
 ## Hardware Recommendations: 
 
