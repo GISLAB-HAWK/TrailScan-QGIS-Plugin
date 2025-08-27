@@ -8,11 +8,11 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 - Data should have sufficient point density for reliable DTM, CHM, MRM, and VDI derivation (minimum 6 points per m², recommended maximum 20 points per m²). 
 
 For Germany, TrailScan was so far tested with free ALS data provided by the authorities of: 
-- Bavaria (add link)
-- Thuringia (add link)
-- Saxony (add link)
-- Brandenburg (add link)
-- Rhineland-Pfalz (add link) - here you will need to merge the lpg.laz and lpo.laz files first, which can be done with QGIS 
+- Bavaria (https://geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=laserdaten)
+- Thuringia (https://geoportal.thueringen.de/gdi-th/download-offene-geodaten/download-hoehendaten)
+- Saxony (https://www.geodaten.sachsen.de/downloadbereich-digitale-hoehenmodelle-4851.html)
+- Brandenburg (https://data.geobasis-bb.de/geobasis/daten/als/)
+- Rhineland-Palatinate (https://lvermgeo.rlp.de/geodaten-geoshop/open-data): point clouds are split into terrain (lpg) and objects (lpo), which need to be merged (e.g. in QGIS)
 
 ---
 
