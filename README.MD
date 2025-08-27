@@ -1,18 +1,27 @@
-# About the TrailScan QGIS Plugin
+![TrailScan Logo](Trailscan/TrailScan_Logo.svg)
+# TrailScan QGIS Plugin
 
-**TrailScan** is a deep learning model designed to automatically detect and segment **skid trails (logging trails)** from **Airborne Laser Scanning (ALS)** data in Central European mixed and deciduous forests.  
+**TrailScan** is a deep learning model designed to automatically **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data in Central European mixed and deciduous forests.
+---
+# Input Data Requirements
+ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiDAR sensors. To ensure compatibility with TrailScan, we recommend the following:
+- **Format**: LAS or LAZ format with a valid georeference
+- **Point Classification**: Follow the standard LAS/LAZ classification scheme.
+    - Ground points (class 2) are required for preprocessing.
+    - If ground classification is missing, it can be generated using PDAL or equivalent tools.
+- **Point Density**: 
+    - Minimum: 6 points/m²
+    - Recommended maximum: 20 points/m² (ensures reliable DTM, CHM, LRM, and VDI derivation)
 
-ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAVs) equipped with LiDAR sensors. To ensure TrailScan compatibility, we recommend the following ALS input criteria:
-- LAS/LAZ format with a valid georeference
-- Point clouds should follow the standard classification scheme as defined in the LAS/LAZ specifications. Classified ground points (class 2) are required for the preprocessing step. If ground classification is missing, it can be generated using PDAL or equivalent tools. 
-- Data should have sufficient point density for reliable DTM, CHM, MRM, and VDI derivation (minimum 6 points per m², recommended maximum 20 points per m²). 
+**Tested ALS Data Sources (Germany)**
 
-For Germany, TrailScan was so far tested with free ALS data provided by the authorities of: 
-- Bavaria (https://geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=laserdaten)
-- Thuringia (https://geoportal.thueringen.de/gdi-th/download-offene-geodaten/download-hoehendaten)
-- Saxony (https://www.geodaten.sachsen.de/downloadbereich-digitale-hoehenmodelle-4851.html)
-- Brandenburg (https://data.geobasis-bb.de/geobasis/daten/als/)
-- Rhineland-Palatinate (https://lvermgeo.rlp.de/geodaten-geoshop/open-data): point clouds are split into terrain (lpg) and objects (lpo), which need to be merged (e.g. in QGIS)
+| Region                   | Data Portal                                                                                                 | Notes                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **Bavaria**              | [Geoportal Bayern](https://geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=laserdaten)                | Direct LAS/LAZ downloads available                                              |
+| **Thuringia**            | [Geoportal Thüringen](https://geoportal.thueringen.de/gdi-th/download-offene-geodaten/download-hoehendaten) | Direct LAS/LAZ downloads available                                                |
+| **Saxony**               | [Geoportal Sachsen](https://www.geodaten.sachsen.de/downloadbereich-digitale-hoehenmodelle-4851.html)       | Direct LAS/LAZ downloads available                                                  |
+| **Brandenburg**          | [GeoBasis Brandenburg](https://data.geobasis-bb.de/geobasis/daten/als/)                                     | Direct LAS/LAZ downloads available                                                           |
+| **Rhineland-Palatinate** | [GeoShop RLP](https://lvermgeo.rlp.de/geodaten-geoshop/open-data)                                           | Point clouds split into **terrain (lpg)** and **objects (lpo)** — merge in QGIS |
 
 ---
 
