@@ -28,18 +28,32 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 
 # Requirements
 
-![QGIS](https://img.shields.io/badge/QGIS-3.40%2B-green?logo=qgis)
+![QGIS](https://img.shields.io/badge/QGIS-3.34%2B-green?logo=qgis)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
+![PDAL](https://img.shields.io/badge/PDAL-2.9.0-orange?logo=pdal)
 ![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 
----
+# QGIS & PDAL Installation & Version Check
+**Quick Start (Windows Users)**
 
-## Software
+- Install QGIS via the **OSGeo4W Network Installer**, e.g. via https://qgis.org/download – this automatically includes PDAL
+- Open the OSGeo4W Shell (from the Start Menu).
+- Run:
 
-- **QGIS** 3.40 or newer  
-- **PDAL** installed in QGIS environment (via OSGEO on Windows or in the Conda environment under Linux ... tbc)
-- **Python packages are installed :**
+`pdal --version`
+
+- This confirms the PDAL version used by QGIS.
+
+**Notes**
+- Do not use the standard Windows Command Prompt or PowerShell for PDAL checks unless you installed PDAL system-wide.
+- On Linux and macOS, you can simply use:
+
+`pdal --version`
+
+> **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
+
+**Additional Python packages are installed automatically with the plugin installation:**
   - `numpy`
   - `scipy`
   - `laspy`
@@ -47,30 +61,6 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
   - `rasterio`
   - `onnxruntime`
  
----
-
-## Installation of Python Packages
-
-- **Linux:** 
-
-  ```bash
-  pip install laspy[lazrs,laszip] rasterio onnxruntime scipy 
-
-- **Windows:**  
-  Open the **OSGeo4W Shell** or the **Python Console of QGIS** and run:  
-
-  ```bash
-  !pip install laspy[lazrs,laszip] rasterio onnxruntime scipy
-
-> **Note:** On Windows, each QGIS installation has its own Python environment. You may need to reinstall the packages after updating or changing your QGIS version. 
-
-- **macOS:** 
-
-  ```bash 
-  pip3 install laspy[lazrs,laszip] rasterio onnxruntime scipy
-
-> **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
-
 ---
 ## ALS LiDAR Data: 
 
