@@ -7,7 +7,7 @@ about=TrailScan is a Deep Learning Model which is trained to segment skid trails
     Please make sure by executing the following code in your shell, that all Python packages are present: <code>pip install laspy[lazrs,laszip], rasterio, onnxruntime, scipy</code>
 
 version=0.0.1
-qgisMinimumVersion=3.40
+qgisMinimumVersion=3.34
 author=Tanja Kempen, Mathias Gröbe
 email=mail@demo
 repository=https://github.com/GISLAB-HAWK/QGIS-Dev-TrailScan
