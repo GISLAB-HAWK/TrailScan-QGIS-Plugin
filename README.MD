@@ -7,12 +7,12 @@ ALS data is collected by aircraft, helicopters, or unmanned aerial vehicles (UAV
 - Point clouds should follow the standard classification scheme as defined in the LAS/LAZ specifications. Classified ground points (class 2) are required for the preprocessing step. If ground classification is missing, it can be generated using PDAL or equivalent tools. 
 - Data should have sufficient point density for reliable DTM, CHM, MRM, and VDI derivation (minimum 6 points per m², recommended maximum 20 points per m²). 
 
-For Germany, TrailScan was tested with free ALS data provided by the authorities of: 
+For Germany, TrailScan was so far tested with free ALS data provided by the authorities of: 
 - Bavaria (add link)
 - Thuringia (add link)
 - Saxony (add link)
 - Brandenburg (add link)
-- Rhineland-Pfalz - here you need to merge the lpg.laz and lpo.laz files first, which can be done with QGIS (add link)
+- Rhineland-Pfalz (add link) - here you will need to merge the lpg.laz and lpo.laz files first, which can be done with QGIS 
 
 ---
 
@@ -48,16 +48,14 @@ For Germany, TrailScan was tested with free ALS data provided by the authorities
 ![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 
-# QGIS & PDAL Installation & Version Check
+# QGIS Installation
 **Quick Start (Windows Users)**
 
-- Install QGIS via the **OSGeo4W Network Installer**, e.g. via https://qgis.org/download – this automatically includes PDAL
-- Open the OSGeo4W Shell (from the Start Menu).
-- Run:
+- Install QGIS via the **OSGeo4W Network Installer**, e.g. via https://qgis.org/download 
+- Choose "Quick Installation" – this should automatically include Python and PDAL
+- If you want to check the PDAL version used by QGIS, you might open the OSGeo4W Shell (from the Start Menu) and run:
 
   `pdal --version`
-
-- This confirms the PDAL version used by QGIS.
 
 **Notes**
 - Do not use the standard Windows Command Prompt or PowerShell for PDAL checks unless you installed PDAL system-wide.
