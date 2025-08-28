@@ -4,7 +4,17 @@
   <img src="docs/images/HAWK_Logo.svg" width="250" style="margin:20px"/>
 </p>
 
-<p align="center"><em>TrailScan is a [HAWK Research Project](https://www.hawk.de/de/forschung/forschungsprojekte/verbesserung-des-waldbodenschutzes-und-der-wasserrueckhaltefunktion-mit-hilfe-kuenstlicher) funded by Sattelmuehle Foundation</em></p>
+<br/>
+
+<p align="center">
+  <em>
+    TrailScan is a 
+    <a href="https://www.hawk.de/de/forschung/forschungsprojekte/verbesserung-des-waldbodenschutzes-und-der-wasserrueckhaltefunktion-mit-hilfe-kuenstlicher" target="_blank">
+      HAWK Research Project
+    </a>
+    funded by Sattelmuehle Foundation
+  </em>
+</p>
 
 
 **TrailScan** is a deep learning model designed to automatically **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data in Central European mixed and deciduous forests.
