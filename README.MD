@@ -1,7 +1,7 @@
 <p align="center">
-  <img src="docs/images/HAWK_Logo.svg" width="250" style="margin:0 40px"/> 
-  <img src="Trailscan/TrailScan_Logo.svg" width="250" style="margin:0 40px"/>
-  <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250" style="margin:0 40px"/>
+  <img src="docs/images/HAWK_Logo.svg" width="250" style="margin:0 60px"/> 
+  <img src="Trailscan/TrailScan_Logo.svg" width="200" style="margin:0 60px"/>
+  <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250" style="margin:0 60px"/>
 </p>
 
 <p align="center" style="margin-top:20px;">
@@ -10,7 +10,10 @@
     <a href="https://www.hawk.de/de/forschung/forschungsprojekte/verbesserung-des-waldbodenschutzes-und-der-wasserrueckhaltefunktion-mit-hilfe-kuenstlicher" target="_blank">
       HAWK Research Project
     </a>
-    funded by Sattelmuehle Foundation
+    funded by 
+    <a href="https://sattelmuehle-stiftung.org/" target="_blank">
+      Sattelmuehle Foundation
+    </a>
   </em>
 </p>
 
