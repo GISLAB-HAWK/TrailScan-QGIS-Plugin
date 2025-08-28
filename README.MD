@@ -1,9 +1,10 @@
+| # TrailScan QGIS Plugin                | <p align="center">   <img src="Trailscan/TrailScan_Logo.svg" width="250"/>          </p>                                                                                     | 
+
 <p align="center">
-  <img src="Trailscan/TrailScan_Logo.svg" width="250"/>
   <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250"/>
-  <img src="docs/images/hawk_logo.svg" width="250"/>
+  <img src="docs/images/HAWK_logo.svg" width="250"/>
 </p>
-# TrailScan QGIS Plugin
+
 
 **TrailScan** is a deep learning model designed to automatically **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data in Central European mixed and deciduous forests.
 ---
