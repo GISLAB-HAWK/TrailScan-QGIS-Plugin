@@ -1,8 +1,6 @@
- <p align="center">   <img src="Trailscan/TrailScan_Logo.svg" width="250"/>          </p>                                                                             
-
 <p align="center">
-  TrailScan is a project from:
-  <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250"/>
+  <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250"/>     
+  <img src="Trailscan/TrailScan_Logo.svg" width="250"/>     
   <img src="docs/images/HAWK_Logo.svg" width="250"/>
 </p>
 
