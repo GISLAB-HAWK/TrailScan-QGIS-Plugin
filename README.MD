@@ -110,9 +110,8 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
 <p>
   <em>
-    Kempen T, Freudenberg M, Fuchs H, Magdon P (2024) Automatisierte Kartierung forstlicher Feinerschließung. AFZ DerWald, 3, 12–15.
     <a href="https://www.researchgate.net/publication/378395450_Automatisierte_Kartierung_forstlicher_Feinerschliessung" target="_blank">
-      HAWK Research Project
+      Kempen T, Freudenberg M, Fuchs H, Magdon P (2024) Automatisierte Kartierung forstlicher Feinerschließung. AFZ DerWald, 3, 12–15.
     </a>
   </em>
 </p>
