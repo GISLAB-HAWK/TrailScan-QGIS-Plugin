@@ -1,12 +1,10 @@
 <p align="center">
-  <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250" style="margin:20px"/>
-  <img src="Trailscan/TrailScan_Logo.svg" width="250" style="margin:20px"/>
-  <img src="docs/images/HAWK_Logo.svg" width="250" style="margin:20px"/>
+  <img src="docs/images/HAWK_Logo.svg" width="250" style="margin:0 40px"/> 
+  <img src="Trailscan/TrailScan_Logo.svg" width="250" style="margin:0 40px"/>
+  <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250" style="margin:0 40px"/>
 </p>
 
-<br/>
-
-<p align="center">
+<p align="center" style="margin-top:20px;">
   <em>
     TrailScan is a 
     <a href="https://www.hawk.de/de/forschung/forschungsprojekte/verbesserung-des-waldbodenschutzes-und-der-wasserrueckhaltefunktion-mit-hilfe-kuenstlicher" target="_blank">
