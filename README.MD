@@ -91,6 +91,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
   > **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
 
+# Plugin Installation
 **Additional Python packages are installed automatically with the plugin installation:**
   - `numpy`
   - `scipy`
@@ -98,6 +99,9 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
   - `lazrs`
   - `rasterio`
   - `onnxruntime`
+
+> **Important:** You may need to restart QGIS after TrailScan Plugin installation.
+
 ---
 ## Hardware Recommendations: 
 
