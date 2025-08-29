@@ -271,6 +271,13 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.log(f'<h3><b>Attempting to install required packages...</b></h3>')
         os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
 
+        if PACKAGES_INSTALL_DIR not in sys.path:
+            try:
+                sys.path.insert(0, PACKAGES_INSTALL_DIR)
+                self.log(f'Added {PACKAGES_INSTALL_DIR} to sys.path')
+            except Exception:
+                pass
+
         self._install_pip_if_necessary()
 
         self.log(f'<h3><b>Attempting to install required packages...</b></h3>\n')
@@ -353,27 +360,44 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         # Try to install packages one by one to avoid conflicts
         for pck in packages:
             try:
+                # Skip installation if package already importable
+                try:
+                    importlib.import_module(pck.import_name)
+                    self.log(f'<em>Skipping {pck.name}: already importable.</em>')
+                    continue
+                except Exception:
+                    pass
+
                 cmd = [
                     PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install',
-                    '--no-input', '--upgrade', f'--target={PACKAGES_INSTALL_DIR}',
+                    '--no-input', '--upgrade', '--disable-pip-version-check', '--no-cache-dir',
+                    '--timeout', '60', '--retries', '3',
+                    f'--target={PACKAGES_INSTALL_DIR}',
                     f"{pck}"
                 ]
                 cmd_string = ' '.join(cmd)
-                
+
                 self.log(f'<em>Installing {pck.name}... Running command: \n  $ {cmd_string} </em>')
-                
+
+                # Prepare environment with PYTHONPATH including target dir
+                env = os.environ.copy()
+                existing_pp = env.get('PYTHONPATH', '')
+                pp_parts = [PACKAGES_INSTALL_DIR] + ([existing_pp] if existing_pp else [])
+                env['PYTHONPATH'] = os.pathsep.join([p for p in pp_parts if p])
+
                 # Add timeout protection to prevent hanging
                 try:
                     with subprocess.Popen(cmd,
                                           stdout=subprocess.PIPE,
                                           universal_newlines=True,
                                           stderr=subprocess.STDOUT,
-                                          creationflags=CREATIONFLAGS) as process:
-                        # Set a reasonable timeout (5 minutes)
+                                          creationflags=CREATIONFLAGS,
+                                          env=env) as process:
+                        # Set a reasonable timeout (15 minutes)
                         try:
                             self._do_process_output_logging(process)
                             # Wait for process with timeout
-                            process.wait(timeout=300)  # 5 minutes timeout
+                            process.wait(timeout=900)  # 15 minutes timeout
                         except subprocess.TimeoutExpired:
                             self.log(f'<span style="color: {_ERROR_COLOR};"><b>Timeout installing {pck.name} - killing process</b></span>')
                             process.kill()
@@ -386,15 +410,15 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                                 process.wait()
                             continue
 
-                    if process.returncode != 0:
-                        self.log(f'<span style="color: {_ERROR_COLOR};"><b>Failed to install {pck.name}</b></span>')
-                        continue
-                    else:
-                        self.log(f'<span style="color: #008000;"><b>Successfully installed {pck.name}</b></span>')
-                        
                 except Exception as subprocess_error:
                     self.log(f'<span style="color: {_ERROR_COLOR};"><b>Subprocess error installing {pck.name}: {subprocess_error}</b></span>')
                     continue
+
+                if process.returncode != 0:
+                    self.log(f'<span style="color: {_ERROR_COLOR};"><b>Failed to install {pck.name}</b></span>')
+                    continue
+                else:
+                    self.log(f'<span style="color: #008000;"><b>Successfully installed {pck.name}</b></span>')
                     
             except Exception as e:
                 self.log(f'<span style="color: {_ERROR_COLOR};"><b>Error installing {pck.name}: {e}</b></span>')
