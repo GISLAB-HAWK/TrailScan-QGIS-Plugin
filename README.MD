@@ -1,7 +1,24 @@
-![TrailScan Logo](Trailscan/TrailScan_Logo.svg)
-# TrailScan QGIS Plugin
+<p align="center">
+  <img src="docs/images/HAWK_Logo.svg" width="250" style="margin:0 100px"/> 
+  <img src="Trailscan/TrailScan_Logo.svg" width="200" style="margin:0 100px"/>
+  <img src="docs/images/sattelmuehle_sms_logo.jpg" width="250" style="margin:0 100px"/>
+</p>
 
-**TrailScan** is a deep learning model designed to automatically **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data in Central European mixed and deciduous forests.
+<p align="center" style="margin-top:20px;">
+  <em>
+    TrailScan is a 
+    <a href="https://www.hawk.de/de/forschung/forschungsprojekte/verbesserung-des-waldbodenschutzes-und-der-wasserrueckhaltefunktion-mit-hilfe-kuenstlicher" target="_blank">
+      HAWK Research Project
+    </a>
+    funded by 
+    <a href="https://sattelmuehle-stiftung.org/" target="_blank">
+      Sattelmuehle Foundation
+    </a>
+  </em>
+</p>
+
+**TrailScan** is QGIS Plugin designed to apply a deep learning model to **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data. In Central European mixed and deciduous forests, permanently designed skid trail networks are used by ground-based forest operations, e.g. harvesters, forwarders and other heavy vehicles. 
+
 ---
 # Input Data Requirements
 ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiDAR sensors. To ensure compatibility with TrailScan, we recommend the following:
@@ -87,3 +104,14 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 - CPU: Multi-core processor (Intel i7/i9 or AMD Ryzen recommended). 
 - RAM: Minimum 16 GB (32 GB or more recommended for large point clouds).  
 - GPU: Not required, but ONNX Runtime can optionally leverage GPU acceleration if supported drivers are installed.
+
+---
+## Publications: 
+
+<p>
+  <em>
+    <a href="https://www.researchgate.net/publication/378395450_Automatisierte_Kartierung_forstlicher_Feinerschliessung" target="_blank">
+      Kempen T, Freudenberg M, Fuchs H, Magdon P (2024) Automatisierte Kartierung forstlicher Feinerschließung. AFZ DerWald, 3, 12–15.
+    </a>
+  </em>
+</p>
