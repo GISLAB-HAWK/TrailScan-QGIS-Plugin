@@ -68,9 +68,9 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
 # Requirements
 
-![QGIS](https://img.shields.io/badge/QGIS-3.34%2B-green?logo=qgis)
+![QGIS](https://img.shields.io/badge/QGIS-3.38%2B-green?logo=qgis)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
-![PDAL](https://img.shields.io/badge/PDAL-2.9.0-orange?logo=pdal)
+![PDAL](https://img.shields.io/badge/PDAL-2.8.0-orange?logo=pdal)
 ![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 
