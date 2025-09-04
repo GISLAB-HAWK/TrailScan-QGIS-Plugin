@@ -117,5 +117,8 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
     <a href="https://www.researchgate.net/publication/378395450_Automatisierte_Kartierung_forstlicher_Feinerschliessung" target="_blank">
       Kempen T, Freudenberg M, Fuchs H, Magdon P (2024) Automatisierte Kartierung forstlicher Feinerschließung. AFZ DerWald, 3, 12–15.
     </a>
+    <a href="https://publikationsserver.hawk.de/receive/hawk_mods_00000314  " target="_blank">
+      Kempen T.  (2023) Kartierung von Rückegassen aus flugzeugbasierten Laserscan-Daten durch ein CNN. Masterarbeit, Universität Göttingen.
+    </a>
   </em>
 </p>
