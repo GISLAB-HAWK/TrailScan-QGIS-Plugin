@@ -81,7 +81,16 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         Returns a localised short helper string for the algorithm. 
         """
 
-        help_string = """The ALS point cloud in .laz or .las data format is opened in QGIS. With the TrailScan preprocessing tool, the point cloud is converted into a 4-band georeferenced raster image. The 4 bands represent a Digital Terrain Model (DTM) in band 1, a Canopy Height Model (CHM) in band 2, a Micro Relief Model (MRM) in band 3 and a vegetation density index (VDI) in band 4. All values are normalized to the range of 0 to 1, therefore the name of the output file is "Normalized"."""
+        help_string = (
+            "The ALS point cloud (.laz or .las) is processed with the TrailScan preprocessing tool.\n\n"
+            "The point cloud is converted into a 4-band georeferenced raster image:\n"
+            "- Band 1: Digital Terrain Model (DTM)\n"
+            "- Band 2: Canopy Height Model (CHM)\n"
+            "- Band 3: Micro Relief Model (MRM)\n"
+            "- Band 4: Vegetation Density Index (VDI)\n\n"
+            "All values are normalized to the range 0–1.\n"
+            "The output file is therefore named \"Normalized\"."
+        )
 
         return help_string
 

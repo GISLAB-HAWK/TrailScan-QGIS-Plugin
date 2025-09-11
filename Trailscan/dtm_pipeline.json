@@ -7,8 +7,8 @@
         "filename": "output_dtm.tif",
         "resolution": 0.38,
         "output_type": "idw",
-        "power": 2.0,  
-        "window_size": 6, 
+        "power": 6.0,
+        "window_size": 12,
         "data_type": "float32",
         "nodata": 0,
         "dimension": "Z"
