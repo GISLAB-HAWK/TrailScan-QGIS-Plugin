@@ -68,9 +68,9 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
 # Requirements
 
-![QGIS](https://img.shields.io/badge/QGIS-3.34%2B-green?logo=qgis)
+![QGIS](https://img.shields.io/badge/QGIS-3.38%2B-green?logo=qgis)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
-![PDAL](https://img.shields.io/badge/PDAL-2.9.0-orange?logo=pdal)
+![PDAL](https://img.shields.io/badge/PDAL-2.8.0-orange?logo=pdal)
 ![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
 ![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
 
@@ -116,6 +116,14 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
   <em>
     <a href="https://www.researchgate.net/publication/378395450_Automatisierte_Kartierung_forstlicher_Feinerschliessung" target="_blank">
       Kempen T, Freudenberg M, Fuchs H, Magdon P (2024) Automatisierte Kartierung forstlicher Feinerschließung. AFZ DerWald, 3, 12–15.
+    </a>
+  </em>
+</p>
+
+<p>
+  <em>
+    <a href="https://publikationsserver.hawk.de/receive/hawk_mods_00000314  " target="_blank">
+      Kempen T.  (2023) Kartierung von Rückegassen aus flugzeugbasierten Laserscan-Daten durch ein CNN. Masterarbeit, Universität Göttingen.
     </a>
   </em>
 </p>
