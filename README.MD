@@ -65,6 +65,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
     </a>
   </em>
 </p>
+
 - Add the path to the TrailScan Model file saved on your computer. 
 - The TrailScan model processes the *Normalized File* and produces a **Trailmap**.  
 
