@@ -72,7 +72,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![PDAL](https://img.shields.io/badge/PDAL-2.8.0-orange?logo=pdal)
 ![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
-![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20macOS-lightgrey)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20)
 
 # QGIS Installation
 **Quick Start (Windows Users)**
@@ -85,11 +85,10 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
 **Notes**
 - Do not use the standard Windows Command Prompt or PowerShell for PDAL checks unless you installed PDAL system-wide.
-- On Linux and macOS, you can simply use:
+- On Linux, you may simply use:
 
   `pdal --version`
 
-  > **Tip:** Depending on your macOS setup, you may need a dedicated Python environment (e.g., via conda or venv) to ensure compatibility with QGIS. 
 
 # Plugin Installation
 **Additional Python packages are installed automatically with the plugin installation:**
