@@ -57,7 +57,15 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 ## 2. TrailScan Inference
 
 - **Input:** the *Normalized File* generated in step 1.  
-- Add the path to the `trailscan_model.onnx` file.  
+- Download the TrailScan model here and save it on your local computer: 
+  <p>
+  <em>
+    <a href="https://www.zenodo.com/idtomodeltobecreated">
+      TrailScan Model Version "Thuringia"
+    </a>
+  </em>
+</p>
+- Add the path to the TrailScan Model file saved on your computer. 
 - The TrailScan model processes the *Normalized File* and produces a **Trailmap**.  
 
 **Trailmap** is a prediction raster with values between 0 and 1:  
@@ -72,7 +80,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python)
 ![PDAL](https://img.shields.io/badge/PDAL-2.8.0-orange?logo=pdal)
 ![License](https://img.shields.io/badge/License-GPL--2.0-red.svg)
-![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-lightgrey)
 
 # QGIS Installation
 **Quick Start (Windows Users)**
