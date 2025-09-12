@@ -98,6 +98,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
   `pdal --version`
 
+- Currently we do **NOT** recommend the use of TrailScan on MacOS, see [Issue #15](https://github.com/GISLAB-HAWK/TrailScan-QGIS-Plugin/issues/15)
 
 # Plugin Installation
 **Additional Python packages are installed automatically with the plugin installation:**
