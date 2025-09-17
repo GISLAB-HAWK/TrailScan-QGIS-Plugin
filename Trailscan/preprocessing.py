@@ -32,7 +32,7 @@ import itertools
 import os
 import subprocess
 
-PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
+PIXEL_SIZE = 0.25  # Example pixel size, adjust as needed
 DTM_PIPELINE = "dtm_pipeline.json"
 CHM_PIPELINE = "chm_pipeline.json"
 LOW_VEGETATION_PIPELINE = "low_vegetation_pipeline.json"

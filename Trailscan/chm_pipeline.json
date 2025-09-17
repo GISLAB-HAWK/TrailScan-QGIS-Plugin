@@ -4,7 +4,7 @@
     {
         "type": "writers.gdal",
         "filename": "output_chm.tif",
-        "resolution": 0.38,
+        "resolution": 0.25,
         "output_type": "max",
         "power": 1,  
         "window_size": 3,  

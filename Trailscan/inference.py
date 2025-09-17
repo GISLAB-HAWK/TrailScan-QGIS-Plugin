@@ -32,7 +32,7 @@ from qgis.PyQt.QtGui import QIcon
 import time
 from sys import stdout
 
-PIXEL_SIZE = 0.38  # Example pixel size, adjust as needed
+PIXEL_SIZE = 0.25  # Example pixel size, adjust as needed
 MODEL_CONFIG = {
     'in_shape': (4, 448, 448),  # Channels, Height, Width (match ONNX model)
     'out_bands': 1,

@@ -5,7 +5,7 @@
     {
         "type": "writers.gdal",
         "filename": "output_dtm.tif",
-        "resolution": 0.38,
+        "resolution": 0.25,
         "output_type": "idw",
         "power": 6.0,
         "window_size": 12,

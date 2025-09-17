@@ -8,7 +8,7 @@
     {
         "type": "writers.gdal",
         "filename":"out.tif",
-        "resolution": 0.38,
+        "resolution": 0.25,
         "output_type": "count",
         "power": 1,  
         "window_size": 5,  
