@@ -102,10 +102,8 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
 # Plugin Installation
 **In QGIS, navigate to 'Plugins' -->  'Manage and Install Plugins...'**
-
-
-
-**Additional Python packages are installed automatically with the plugin installation:**
+- Search for 'TrailScan' and click on 'Install Plugin'
+- -Aditional Python packages are installed automatically with the plugin installation:
   - `numpy`
   - `scipy`
   - `laspy`
