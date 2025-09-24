@@ -18,7 +18,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Modifications have been made by Tanja Kempen / TrailScan in 2025:
+Modifications have been made by Tanja Kempen in 2025:
  - Adapted for use in the TrailScan QGIS plugin
 """
 

@@ -1,12 +1,15 @@
 """
-***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************
+#-----------------------------------------------------------
+# Copyright (C) 2025 Tanja Kempen, Mathias Gröbe
+#-----------------------------------------------------------
+# Licensed under the terms of GNU GPL 2
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+#---------------------------------------------------------------------
 """
 
 from typing import Any, Optional
@@ -34,12 +37,12 @@ from sys import stdout
 
 PIXEL_SIZE = 0.25  # Example pixel size, adjust as needed
 MODEL_CONFIG = {
-    'in_shape': (4, 448, 448),  # Channels, Height, Width (match ONNX model)
+    'in_shape': (4, 224, 224),  # Channels, Height, Width (match ONNX model)
     'out_bands': 1,
     'stride': 112,
     'augmentation': True,
     'batch_size': 1,  # ONNX model expects static batch size = 1
-    'tile_size': 448,
+    'tile_size': 224,
     'overlap': 112
 }
 
@@ -86,11 +89,12 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
 
         help_string = (
         "The normalized raster is processed with the TrailScan Model.\n\n"
-        "Download the pretrained TrailScan model here:\n"
-        "https://zenodo.com/idtobedefined\n\n"
+        "Download the trained TrailScan Model here:\n"
+        "https://doi.org/10.25625/GEIP6T\n\n"
+        "Save the TrailScan Model on your local drive\n"
         "Output:\n"
-        "- A probability raster with values between 0 and 1.\n"
-        "- Pixels with a value of 0 indicate areas that are not skid trails.\n"
+        "- Trailmap: A probability raster with values between 0 and 1.\n"
+        "- Pixels with a value near 0 indicate areas that are not skid trails.\n"
         "- Higher values indicate a higher probability that a skid trail was detected."
     )
         return help_string
@@ -107,7 +111,7 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterRasterLayer(
                 name=self.INPUT,
-                description="Input preprocessed point cloud data",
+                description="Input normalized raster from TrailScan Preprocessing tool",
                 defaultValue="Normalized",
                 optional=False,
             )
@@ -116,7 +120,7 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         self.addParameter(
             QgsProcessingParameterFile(
                 name=self.MODEL_FILE,
-                description="Path to the ONNX model file",
+                description="Path to the TrailScan model file",
                 behavior=QgsProcessingParameterFile.Behavior.File,
                 fileFilter="ONNX model files (*.onnx);;All files (*)",
             )

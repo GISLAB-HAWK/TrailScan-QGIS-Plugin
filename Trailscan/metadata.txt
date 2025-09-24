@@ -1,17 +1,17 @@
 [general]
 name=TrailScan
-qgisMinimumVersion=3.34
+qgisMinimumVersion=3.38
 version=0.1.0
-author=HAWK GISLab (Tanja Kempen, Mathias Gröbe)
+author=HAWK Forest Monitoring Lab (Tanja Kempen, Mathias Gröbe, Maximilian Freudenberg, Paul Magdon)
 email=tanja.kempen@hawk.de
 description=Deep learning-based segmentation of skid trails from airborne LiDAR data
-about=<b>TrailScan</b> is a QGIS plugin for detecting skid trails from Airborne Laser Scanning (ALS) data in Central European forests.<br><br>
+about=<b>TrailScan</b> is a QGIS plugin for mapping of skid trails from Airborne Laser Scanning (ALS) data in forests in Germany.<br><br>
 <b>Input:</b> ALS point clouds (.laz or .las) from aircraft, helicopters, or UAVs.<br><br>
 <b>Workflow:</b><br>
 1. Preprocessing: Convert the point cloud into a normalized 4-band raster (DTM, CHM, MRM, VDI).<br>
-2. Inference: Apply the TrailScan model to generate a probability raster (0–1).<br><br>
-Download the pretrained TrailScan model and example data <a href="https://github.com/GISLAB-HAWK/TrailScan-QGIS-Plugin/releases">here</a>.<br><br>
-<b>Output:</b> Georeferenced raster layers ready for further GIS analysis.
+2. Inference: Apply the TrailScan model to the normalized raster to generate a probability raster (0–1) named "Trailmap".<br><br>
+Download the trained TrailScan model <a href="https://doi.org/10.25625/GEIP6T">here</a>.<br><br>
+<b>Output:</b> Georeferenced raster 'Trailmap' ready for further GIS analysis.
 repository=https://github.com/GISLAB-HAWK/TrailScan-QGIS-Plugin
 icon=TrailScan_Logo.svg
 tags=LiDAR, Point Cloud, Deep Learning, Forestry, Skid Trails, ALS

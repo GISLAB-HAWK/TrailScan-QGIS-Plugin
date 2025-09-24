@@ -1,12 +1,15 @@
 """
-***************************************************************************
-*                                                                         *
-*   This program is free software; you can redistribute it and/or modify  *
-*   it under the terms of the GNU General Public License as published by  *
-*   the Free Software Foundation; either version 2 of the License, or     *
-*   (at your option) any later version.                                   *
-*                                                                         *
-***************************************************************************
+#-----------------------------------------------------------
+# Copyright (C) 2025 Tanja Kempen, Mathias Gröbe
+#-----------------------------------------------------------
+# Licensed under the terms of GNU GPL 2
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+#---------------------------------------------------------------------
 """
 
 from typing import Any, Optional
@@ -41,9 +44,9 @@ HIGH_VEGETATION_PIPELINE = "high_vegetation_pipeline.json"
 
 class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     """
-    Preparation of point cloud data for Trailscan analysis.
+    Preparation of point cloud data for TrailScan analysis.
     This algorithm processes point cloud data to create various raster outputs
-    such as DTM, CHM, LRM and VDI.
+    such as DTM, CHM, MRM and VDI.
     """
 
 
@@ -82,13 +85,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         """
 
         help_string = (
-            "The ALS point cloud (.laz or .las) is processed with the TrailScan preprocessing tool.\n\n"
+            "The ALS point cloud (.laz or .las format) is processed with the TrailScan preprocessing tool.\n\n"
             "The point cloud is converted into a 4-band georeferenced raster image:\n"
             "- Band 1: Digital Terrain Model (DTM)\n"
             "- Band 2: Canopy Height Model (CHM)\n"
             "- Band 3: Micro Relief Model (MRM)\n"
             "- Band 4: Vegetation Density Index (VDI)\n\n"
-            "All values are normalized to the range 0–1.\n"
+            "Each band's values are normalized to the range 0–1.\n"
             "The output file is therefore named \"Normalized\"."
         )
 
@@ -222,7 +225,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             input_laz = input_laz[len("pdal://"):]
         vdi_outfile = QgsProcessingUtils.generateTempFilename("VDI.tif", context=context)
         dtm_outfile = QgsProcessingUtils.generateTempFilename("DTM.tif", context=context)
-        lrm_outfile = QgsProcessingUtils.generateTempFilename("LRM.tif", context=context)
+        mrm_outfile = QgsProcessingUtils.generateTempFilename("MRM.tif", context=context)
         chm_outfile = QgsProcessingUtils.generateTempFilename("CHM.tif", context=context)
         low_vegetation_outfile = QgsProcessingUtils.generateTempFilename("LowVegetation.tif", context=context)
         high_vegetation_outfile = QgsProcessingUtils.generateTempFilename("HighVegetation.tif", context=context)
@@ -265,7 +268,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             raise QgsProcessingException("Failed to check PDAL drivers. See log for details.")
 
         # Ensure output directories exist
-        for outfile in [dtm_outfile, lrm_outfile, chm_outfile, vdi_outfile, low_vegetation_outfile, high_vegetation_outfile, output_raster]:
+        for outfile in [dtm_outfile, mrm_outfile, chm_outfile, vdi_outfile, low_vegetation_outfile, high_vegetation_outfile, output_raster]:
             out_dir = os.path.dirname(outfile)
             if out_dir and not os.path.isdir(out_dir):
                 os.makedirs(out_dir, exist_ok=True)
@@ -345,12 +348,12 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        feedback.pushInfo("Calculating LRM...")
+        feedback.pushInfo("Calculating MRM...")
         dtm_smoothed_array = median_filter(dtm_array, size=10)
-        lrm_array = dtm_array - dtm_smoothed_array
-        lrm_array = np.clip(lrm_array, -1, 1)
+        mrm_array = dtm_array - dtm_smoothed_array
+        mrm_array = np.clip(mrm_array, -1, 1)
 
-        self.create_single_raster(lrm_array, transform, lrm_outfile, crs.toWkt(), nodata_value=nodata_value)
+        self.create_single_raster(mrm_array, transform, mrm_outfile, crs.toWkt(), nodata_value=nodata_value)
 
         feedback.setCurrentStep(next(counter))
         if feedback.isCanceled():
@@ -433,7 +436,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         feedback.pushInfo("Creating normalized raster by combining the results...")
 
-        combined_array = np.stack([dtm_array, chm_array, lrm_array, vdi_array], axis=2)
+        combined_array = np.stack([dtm_array, chm_array, mrm_array, vdi_array], axis=2)
         normalized_array = self.normalize_percentile(combined_array, nodata_value=nodata_value)
 
         self.create_multiband_raster(
