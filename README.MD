@@ -60,8 +60,8 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 - Download the TrailScan model here and save it on your local computer: 
   <p>
   <em>
-    <a href="https://www.zenodo.com/idtomodeltobecreated">
-      TrailScan Model Version "Thuringia"
+    <a href="https://doi.org/10.25625/GEIP6T">
+      TrailScan Model "Thuringia"
     </a>
   </em>
 </p>
