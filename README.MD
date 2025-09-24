@@ -7,7 +7,7 @@
 <p align="center" style="margin-top:20px;">
   <em>
     TrailScan is a 
-    <a href="https://www.hawk.de/de/forschung/forschungsprojekte/verbesserung-des-waldbodenschutzes-und-der-wasserrueckhaltefunktion-mit-hilfe-kuenstlicher" target="_blank">
+    <a href="https://www.hawk.de/de/forschung/forschungsprojekte/trailscan" target="_blank">
       HAWK Research Project
     </a>
     funded by 
@@ -60,8 +60,8 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 - Download the TrailScan model here and save it on your local computer: 
   <p>
   <em>
-    <a href="https://www.zenodo.com/idtomodeltobecreated">
-      TrailScan Model Version "Thuringia"
+    <a href="https://doi.org/10.25625/GEIP6T">
+      TrailScan Model "Thuringia"
     </a>
   </em>
 </p>
@@ -101,7 +101,9 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 - Currently we do **NOT** recommend the use of TrailScan on MacOS, see [Issue #15](https://github.com/GISLAB-HAWK/TrailScan-QGIS-Plugin/issues/15)
 
 # Plugin Installation
-**Additional Python packages are installed automatically with the plugin installation:**
+**In QGIS, navigate to 'Plugins' -->  'Manage and Install Plugins...'**
+- Search for 'TrailScan' and click on 'Install Plugin'
+- -Aditional Python packages are installed automatically with the plugin installation:
   - `numpy`
   - `scipy`
   - `laspy`
@@ -132,7 +134,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 <p>
   <em>
     <a href="https://publikationsserver.hawk.de/receive/hawk_mods_00000314  " target="_blank">
-      Kempen T.  (2023) Kartierung von Rückegassen aus flugzeugbasierten Laserscan-Daten durch ein CNN. Masterarbeit, Universität Göttingen.
+      Kempen T.  (2025) Kartierung von Rückegassen aus flugzeugbasierten Laserscan-Daten durch ein CNN. Masterarbeit, Universität Göttingen.
     </a>
   </em>
 </p>
