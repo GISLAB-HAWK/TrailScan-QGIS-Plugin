@@ -132,7 +132,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 <p>
   <em>
     <a href="https://publikationsserver.hawk.de/receive/hawk_mods_00000314  " target="_blank">
-      Kempen T.  (2023) Kartierung von Rückegassen aus flugzeugbasierten Laserscan-Daten durch ein CNN. Masterarbeit, Universität Göttingen.
+      Kempen T.  (2025) Kartierung von Rückegassen aus flugzeugbasierten Laserscan-Daten durch ein CNN. Masterarbeit, Universität Göttingen.
     </a>
   </em>
 </p>
