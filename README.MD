@@ -7,7 +7,7 @@
 <p align="center" style="margin-top:20px;">
   <em>
     TrailScan is a 
-    <a href="https://www.hawk.de/de/forschung/forschungsprojekte/verbesserung-des-waldbodenschutzes-und-der-wasserrueckhaltefunktion-mit-hilfe-kuenstlicher" target="_blank">
+    <a href="https://www.hawk.de/de/forschung/forschungsprojekte/trailscan" target="_blank">
       HAWK Research Project
     </a>
     funded by 
