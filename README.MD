@@ -18,6 +18,7 @@
 </p>
 
 **TrailScan** is QGIS Plugin designed to apply a deep learning model to **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data. In Central European mixed and deciduous forests, permanently designed skid trail networks are used by ground-based forest operations, e.g. harvesters, forwarders and other heavy vehicles. 
+---
 
 ---
 # Input Data Requirements
@@ -38,7 +39,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 | **Thuringia**            | [Geoportal Thüringen](https://geoportal.thueringen.de/gdi-th/download-offene-geodaten/download-hoehendaten) | Direct LAS/LAZ downloads available                                                |
 | **Saxony**               | [Geoportal Sachsen](https://www.geodaten.sachsen.de/downloadbereich-digitale-hoehenmodelle-4851.html)       | Direct LAS/LAZ downloads available                                                  |
 | **Brandenburg**          | [GeoBasis Brandenburg](https://data.geobasis-bb.de/geobasis/daten/als/)                                     | Direct LAS/LAZ downloads available                                                           |
-| **Rhineland-Palatinate** | [GeoShop RLP](https://lvermgeo.rlp.de/geodaten-geoshop/open-data)                                           | Point clouds split into **terrain (lpg)** and **objects (lpo)** — merge in QGIS |
+| **Rhineland-Palatinate** | [GeoShop RLP](https://lvermgeo.rlp.de/geodaten-geoshop/open-data)                                           | Point clouds split into **terrain (lpg)** and **objects (lpo)** - merge in QGIS |
 
 ---
 
@@ -61,7 +62,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
   <p>
   <em>
     <a href="https://doi.org/10.25625/GEIP6T">
-      TrailScan Model "Thuringia"
+      TrailScan Model "Thuringia" (incl. test data)
     </a>
   </em>
 </p>
