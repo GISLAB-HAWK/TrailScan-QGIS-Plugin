@@ -22,11 +22,11 @@
 ---
 
 <p align="center">
-  <img src="docs/images/curt-the-skidtrail-dog.jpg" width="70" style="margin:0 200px"/> 
-  <img src="docs/images/BB_Test_Trailmap.png" width="70" style="margin:0 200px"/> 
-  <img src="docs/images/groundtruth-gnss-rtk-tracking.jpg" width="70" style="margin:0 200px"/> 
-  <img src="docs/images/machine-on-skidtrail.jpg" width="70" style="margin:0 200px"/> 
-  <img src="docs/images/3d-pointcloud.jpg" width="70" style="margin:0 200px"/> 
+  <img src="docs/images/curt-the-skidtrail-dog.jpg" width="200" style="margin:0 200px"/> 
+  <img src="docs/images/BB_Test_Trailmap.png" width="200" style="margin:0 200px"/> 
+  <img src="docs/images/groundtruth-gnss-rtk-tracking.jpg" width="200" style="margin:0 200px"/> 
+  <img src="docs/images/machine-on-skidtrail.jpg" width="200" style="margin:0 200px"/> 
+  <img src="docs/images/3d-pointcloud.jpg" width="200" style="margin:0 200px"/> 
 </p>
 
 ---
