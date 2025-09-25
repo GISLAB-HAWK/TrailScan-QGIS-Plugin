@@ -61,7 +61,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
   <p>
   <em>
     <a href="https://doi.org/10.25625/GEIP6T">
-      TrailScan Model "Thuringia"
+      TrailScan Model "Thuringia" (incl. test data)
     </a>
   </em>
 </p>
