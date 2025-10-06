@@ -9,6 +9,7 @@
 # (at your option) any later version.
 
 #---------------------------------------------------------------------
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QAction, QMessageBox
 from qgis.core import QgsApplication, QgsProcessingProvider, Qgis
@@ -28,15 +29,34 @@ class TrailScan:
         self.algorithms_loaded = False
 
     def initGui(self):
-        self.toolbar = self.iface.addToolBar("Trailscan")
+        self.toolbar = self.iface.addToolBar("TrailScan")
         self.toolbar.setObjectName("TrailScanToolbar")
-        self.action = QAction('Trailscan Preprocessing', self.iface.mainWindow())
-        self.action2 = QAction('Trailscan Inference', self.iface.mainWindow())
+        icon_preprocessing = os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.png')
+        icon_inference = os.path.join(os.path.dirname(__file__), 'TrailScan_Inference.png')
+
+        # Actions with Icon
+        self.action = QAction(QIcon(icon_preprocessing), 'Preprocessing', self.iface.mainWindow())
+        self.action.setIconText('Preprocessing')
+        self.action.setToolTip('Run TrailScan Preprocessing')
+        self.action.setStatusTip('Preprocess ALS point clouds for TrailScan')
+
+        self.action2 = QAction(QIcon(icon_inference), 'Inference', self.iface.mainWindow())
+        self.action2.setIconText('Inference')
+        self.action2.setToolTip('Run TrailScan Inference')
+        self.action2.setStatusTip('Run TrailScan model inference on preprocessed raster')
+
+        # Icon plus text
+        self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+
+        # add action to toolbar
         self.toolbar.addAction(self.action)
         self.toolbar.addAction(self.action2)
+
+        # connect signals
         self.action.triggered.connect(self.runPreProcessing)
         self.action2.triggered.connect(self.runInference)
 
+        # initialize Processing Provider
         self.initProcessing()
 
     def initProcessing(self):
