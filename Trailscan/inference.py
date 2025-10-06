@@ -100,7 +100,7 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         return help_string
 
     def icon(self):
-        return QIcon(os.path.join(os.path.dirname(__file__), 'TrailScan_Logo.svg'))
+        return QIcon(os.path.join(os.path.dirname(__file__), 'TrailScan_Inference.svg'))
 
     def initAlgorithm(self, config: Optional[dict[str, Any]] = None):
         """
