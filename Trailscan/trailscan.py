@@ -1,5 +1,5 @@
 #-----------------------------------------------------------
-# Copyright (C) 2025 HAWK Forest Monitoring Lab
+# Copyright (C) 2025 HAWK Forest Monitoring Lab (Tanja Kempen, Mathias Groebe)
 #-----------------------------------------------------------
 # Licensed under the terms of GNU GPL 2
 #
