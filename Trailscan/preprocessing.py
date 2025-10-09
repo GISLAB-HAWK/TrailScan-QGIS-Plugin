@@ -172,7 +172,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
                 errors.append("No ground points found (class 2 missing). Ground points must be class 2.")
             if not np.any(classes != 2):
                 errors.append(
-                    "Point cloud contains only ground points (only class 2). Need at least one additional class (e.g., vegetation).")
+                    "Point cloud contains only ground points (only class 2). For TrailScan segmentation, also above-ground points (trees, vegetation etc.) are required that are classified differently from ground points.  ")
 
         # --- Check CRS ---
         crs = sourceCloud.crs().horizontalCrs()
