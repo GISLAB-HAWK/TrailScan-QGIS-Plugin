@@ -23,6 +23,8 @@ import subprocess
 PIXEL_SIZE = 0.25
 DTM_PIPELINE = "dtm_pipeline.json"
 CHM_PIPELINE = "chm_pipeline.json"
+LOW_VEGETATION_PIPELINE = "low_vegetation_pipeline.json"
+HIGH_VEGETATION_PIPELINE = "high_vegetation_pipeline.json"
 
 
 class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
@@ -84,6 +86,17 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         transform = from_origin(x_min, y_max, resolution, resolution)
         return transform, width, height
 
+    def create_single_raster(self, data_array, transform, output_path, crs, nodata_value=0):
+        height, width = data_array.shape
+        crs_def = CRS.from_wkt(crs)
+        with rasterio.open(
+            output_path, "w",
+            driver="GTiff", height=height, width=width,
+            count=1, dtype=data_array.dtype, crs=crs_def, transform=transform,
+            nodata=nodata_value
+        ) as dst:
+            dst.write(data_array, 1)
+
     def create_multiband_raster(self, data_arrays, transform, output_path, crs, nodata_value=0):
         num_bands = len(data_arrays)
         height, width = data_arrays[0].shape
@@ -109,7 +122,7 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
     def processAlgorithm(self, parameters, context, feedback):
 
         counter = itertools.count(1)
-        count_max = 5
+        count_max = 8
         feedback = QgsProcessingMultiStepFeedback(count_max, feedback)
 
         sourceCloud = self.parameterAsPointCloudLayer(parameters, self.POINTCLOUD, context)
@@ -120,12 +133,14 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         if sourceCloud is None:
             raise QgsProcessingException("Invalid point cloud input")
 
-        # --- Check Point Density, Classification, and CRS ---
+        # --- Load LAS ---
+        las = laspy.read(input_laz)
+
+        # --- Initialize errors/warnings ---
         errors = []
         warnings = []
 
-        # --- check point density ---
-        las = laspy.read(input_laz)
+        # --- Check point density ---
         x_min, x_max = np.min(las.x), np.max(las.x)
         y_min, y_max = np.min(las.y), np.max(las.y)
         area_m2 = (x_max - x_min) * (y_max - y_min)
@@ -137,16 +152,15 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         elif point_density > 20:
             warnings.append(
                 "High point density (>20 pts/m²). Processing may be slow. "
-                "Consider thinning the point cloud, e.g. by using the QGIS point cloud data management tool 'Thin'."
+                "Consider thinning the point cloud, e.g. using the QGIS tool 'Thin'."
             )
 
-        # --- check classification ---
+        # --- Check classification ---
         if not hasattr(las, "classification"):
             errors.append(
                 "Point cloud is not classified. Ground points must be class 2; others must have distinct classes."
             )
         else:
-            # transform to numpy-int-Array
             try:
                 classes = np.unique(las.classification).astype(int)
             except Exception:
@@ -154,51 +168,48 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
             feedback.pushInfo(f"Detected classification codes: {classes.tolist()}")
 
-            if classes.size == 0:
-                errors.append("Classification array is empty.")
-            else:
-                # Ground class (2) must exist
-                if 2 not in classes:
-                    errors.append("No ground points found (class 2 missing). Ground points must be class 2.")
-                # Vegetation must be classified other than ground (class 2)
-                if not np.any(classes != 2):
-                    errors.append(
-                        "Point cloud contains only ground points (only class 2). Need at least one additional class (e.g. vegetation).")
+            if 2 not in classes:
+                errors.append("No ground points found (class 2 missing). Ground points must be class 2.")
+            if not np.any(classes != 2):
+                errors.append(
+                    "Point cloud contains only ground points (only class 2). Need at least one additional class (e.g., vegetation).")
 
-        # --- check CRS ---
+        # --- Check CRS ---
         crs = sourceCloud.crs().horizontalCrs()
         if not crs.isValid():
             project_crs = context.project().crs() if context.project() else None
             if project_crs and project_crs.isValid():
                 crs = project_crs
-                warnings.append("No valid coordinate reference system found in point cloud. Using project CRS.")
+                warnings.append("No valid CRS found in point cloud. Using project CRS.")
             else:
-                errors.append("Missing coordinate reference system (CRS). Please specify a valid CRS.")
+                errors.append("Missing CRS. Please specify a valid CRS.")
 
-        # --- output warnings and errors ---
+        # --- Output warnings and errors ---
         for w in warnings:
             feedback.pushWarning(w)
 
         if errors:
             raise QgsProcessingException("\n".join(errors))
 
-        # --- check PDAL ---
+        # --- Check PDAL availability ---
         creationflags = 0
         if os.name == "nt":
             creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         try:
-            subprocess.run(["pdal", "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.run(["pdal", "--version"], check=True, creationflags=creationflags)
         except (subprocess.CalledProcessError, FileNotFoundError):
             raise QgsProcessingException("PDAL not installed or not found in PATH.")
 
-        # --- temporary output files ---
+        # --- Temporary output files ---
         dtm_outfile = QgsProcessingUtils.generateTempFilename("DTM.tif", context=context)
         chm_outfile = QgsProcessingUtils.generateTempFilename("CHM.tif", context=context)
         mrm_outfile = QgsProcessingUtils.generateTempFilename("MRM.tif", context=context)
         vdi_outfile = QgsProcessingUtils.generateTempFilename("VDI.tif", context=context)
+        low_vegetation_outfile = QgsProcessingUtils.generateTempFilename("LowVegetation.tif", context=context)
+        high_vegetation_outfile = QgsProcessingUtils.generateTempFilename("HighVegetation.tif", context=context)
         output_raster = self.parameterAsOutputLayer(parameters, self.OUTPUT_NORMALIZED, context)
 
-        # --- run DTM pipeline ---
+        # --- Run DTM pipeline ---
         feedback.pushInfo("Running DTM pipeline...")
         dtm_pipeline_path = os.path.join(os.path.dirname(__file__), DTM_PIPELINE)
         subprocess.run([
@@ -206,9 +217,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             f"--readers.las.filename={input_laz}",
             f"--writers.gdal.filename={dtm_outfile}",
             f"--writers.gdal.resolution={PIXEL_SIZE}"
-        ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, creationflags=creationflags)
+        ], check=True, creationflags=creationflags)
 
-        # --- run CHM pipeline ---
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        # --- Run CHM pipeline ---
         feedback.pushInfo("Running CHM pipeline...")
         chm_pipeline_path = os.path.join(os.path.dirname(__file__), CHM_PIPELINE)
         subprocess.run([
@@ -216,9 +231,13 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
             f"--readers.las.filename={input_laz}",
             f"--writers.gdal.filename={chm_outfile}",
             f"--writers.gdal.resolution={PIXEL_SIZE}"
-        ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, creationflags=creationflags)
+        ], check=True, creationflags=creationflags)
 
-        # --- load rasters ---
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        # --- Load rasters ---
         with rasterio.open(dtm_outfile) as dtm_src:
             dtm_array = dtm_src.read(1)
             nodata_value = dtm_src.nodata or 0
@@ -226,15 +245,83 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         with rasterio.open(chm_outfile) as chm_src:
             chm_array = chm_src.read(1)
 
-        # --- MRM ---
+        # --- Align arrays to same shape ---
+        min_rows = min(dtm_array.shape[0], chm_array.shape[0])
+        min_cols = min(dtm_array.shape[1], chm_array.shape[1])
+
+        dtm_array = dtm_array[:min_rows, :min_cols]
+        chm_array = chm_array[:min_rows, :min_cols]
+
+        # MRM based on DTM
         dtm_smoothed_array = median_filter(dtm_array, size=10)
         mrm_array = np.clip(dtm_array - dtm_smoothed_array, -1, 1)
+        mrm_array = mrm_array[:min_rows, :min_cols]
 
-        # --- VDI (placeholder) ---
-        vdi_array = chm_array.astype(np.float32)
-        vdi_array = np.clip(vdi_array / np.max(vdi_array), 0, 1)
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
 
-        # --- create normalized multiband raster ---
+        # --- Calculate low vegetation ---
+        feedback.pushInfo("Calculating low vegetation...")
+        low_pipeline_path = os.path.join(os.path.dirname(__file__), LOW_VEGETATION_PIPELINE)
+        subprocess.run([
+            "pdal", "pipeline", low_pipeline_path,
+            f"--readers.las.filename={input_laz}",
+            f"--writers.gdal.filename={low_vegetation_outfile}",
+            f"--writers.gdal.resolution={PIXEL_SIZE}"
+        ], check=True, creationflags=creationflags)
+
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        # --- Calculate high vegetation ---
+        feedback.pushInfo("Calculating high vegetation...")
+        high_pipeline_path = os.path.join(os.path.dirname(__file__), HIGH_VEGETATION_PIPELINE)
+        subprocess.run([
+            "pdal", "pipeline", high_pipeline_path,
+            f"--readers.las.filename={input_laz}",
+            f"--writers.gdal.filename={high_vegetation_outfile}",
+            f"--writers.gdal.resolution={PIXEL_SIZE}"
+        ], check=True, creationflags=creationflags)
+
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        # --- Calculate VDI ---
+        feedback.pushInfo("Calculating VDI...")
+        with rasterio.open(low_vegetation_outfile) as low_veg_src:
+            low_veg_array = low_veg_src.read(1)
+        with rasterio.open(high_vegetation_outfile) as high_veg_src:
+            high_veg_array = high_veg_src.read(1)
+
+        # --- Align shapes (avoid broadcasting errors) ---
+        min_rows = min(low_veg_array.shape[0], high_veg_array.shape[0])
+        min_cols = min(low_veg_array.shape[1], high_veg_array.shape[1])
+        low_veg_array = low_veg_array[:min_rows, :min_cols]
+        high_veg_array = high_veg_array[:min_rows, :min_cols]
+
+        # --- Compute VDI (ratio low/high vegetation) ---
+        with np.errstate(divide='ignore', invalid='ignore'):
+            vdi_array = np.divide(
+                low_veg_array.astype(np.float32),
+                high_veg_array.astype(np.float32),
+                out=np.zeros((min_rows, min_cols), dtype=np.float32),
+                where=high_veg_array != 0,
+            )
+
+        # Replace zeros with small constant to avoid log issues later
+        vdi_array = np.where(vdi_array == 0, 0.1, vdi_array)
+        vdi_array = np.clip(vdi_array, 0, 1)
+
+
+        feedback.setCurrentStep(next(counter))
+        if feedback.isCanceled():
+            return {}
+
+        # --- Create normalized multiband raster ---
+        feedback.pushInfo("Creating normalized multiband raster...")
         combined_array = np.stack([dtm_array, chm_array, mrm_array, vdi_array], axis=2)
         normalized_array = self.normalize_percentile(combined_array, nodata_value=nodata_value)
         self.create_multiband_raster(
