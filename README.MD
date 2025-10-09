@@ -112,7 +112,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 
 # Plugin Installation
 **In QGIS, navigate to 'Plugins' -->  'Manage and Install Plugins...'**
-**Important Note**
+
 - Experimental version: You may need to activate "Show experimental Plugins" in the "Settings" section of QGIS Plugins menu!
 
 
