@@ -149,16 +149,16 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
 
         if point_density < 5:
             errors.append("Point density too low (<5 pts/m²). Please use a higher resolution dataset.")
-        elif point_density > 20:
+        elif point_density > 30:
             warnings.append(
-                "High point density (>20 pts/m²). Processing may be slow. "
-                "You may consider thinning the point cloud, e.g. using the QGIS point cloud data management tool 'Thin'."
+                "Your point cloud has a a high point density (>30 pts/m²). Processing may be slow. "
+                "You may consider thinning the point cloud to speed up preprocessing, e.g. by using the QGIS point cloud data management tool 'Thin'."
             )
 
         # --- Check classification ---
         if not hasattr(las, "classification"):
             errors.append(
-                "Point cloud is not classified. Ground points must be class 2; others must have distinct classes."
+                "Point cloud is not classified. Ground points must be class 2; others (e.g. vegetation) must have distinct classes."
             )
         else:
             try:
