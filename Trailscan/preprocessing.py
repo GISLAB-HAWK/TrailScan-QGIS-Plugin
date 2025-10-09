@@ -147,12 +147,12 @@ class TrailscanPreProcessingAlgorithm(QgsProcessingAlgorithm):
         point_density = len(las.x) / area_m2
         feedback.pushInfo(f"Point density: {point_density:.2f} pts/m²")
 
-        if point_density < 4:
-            errors.append("Point density too low (<4 pts/m²). Please use a higher resolution dataset.")
+        if point_density < 5:
+            errors.append("Point density too low (<5 pts/m²). Please use a higher resolution dataset.")
         elif point_density > 20:
             warnings.append(
                 "High point density (>20 pts/m²). Processing may be slow. "
-                "Consider thinning the point cloud, e.g. using the QGIS tool 'Thin'."
+                "You may consider thinning the point cloud, e.g. using the QGIS point cloud data management tool 'Thin'."
             )
 
         # --- Check classification ---
