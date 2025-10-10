@@ -32,13 +32,13 @@
 
 # Input Data Requirements
 ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiDAR sensors. To ensure compatibility with TrailScan, we recommend the following:
-- **Format**: LAS or LAZ format with a valid georeference
+- **Format**: LAS or LAZ format with a valid georeference (otherwise, the coordinate reference system of the QGIS project will be applied)
 - **Point Classification**: Follow the standard LAS/LAZ classification scheme.
-    - Ground points (class 2) are required for preprocessing.
+    - Ground points (class 2) are required for preprocessing, vegetation points need to be labeled in at least one different class. 
     - If ground classification is missing, it can be generated using PDAL or equivalent tools.
 - **Point Density**: 
-    - Minimum: 6 points/m²
-    - Recommended maximum: 20 points/m² (ensures reliable DTM, CHM, LRM, and VDI derivation)
+    - Minimum: 5 points/m²
+    - Recommended point density: 10-20 points/m² (ensures reliable DTM, CHM, LRM, and VDI derivation, while higher point densities may increase processing time significantly)
 
 **Tested ALS Data Sources (Germany)**
 
