@@ -18,6 +18,7 @@ import sys
 import subprocess
 import importlib
 import shutil
+import platform
 
 # Global flag to prevent multiple package checks
 _package_check_done = False
@@ -27,11 +28,11 @@ def _try_import_installer():
     """Try to import the packages_installer_dialog module (relative or absolute)."""
     try:
         from . import packages_installer_dialog
-        return packages_installer_dialog
+        installer = packages_installer_dialog
     except ImportError:
         try:
             import packages_installer_dialog
-            return packages_installer_dialog
+            installer = packages_installer_dialog
         except ImportError as e:
             QgsMessageLog.logMessage(
                 f"Warning: Could not import packages_installer_dialog: {e}",
@@ -43,7 +44,29 @@ def _try_import_installer():
                 "TrailScan",
                 Qgis.Warning
             )
-            return None
+            installer = None
+
+    # --- Log OS and Import-Status ---
+    current_os = platform.system()
+    QgsMessageLog.logMessage(
+        f"Operating System detected: {current_os}",
+        "TrailScan",
+        Qgis.Info
+    )
+    if installer:
+        QgsMessageLog.logMessage(
+            "packages_installer_dialog successfully imported.",
+            "TrailScan",
+            Qgis.Info
+        )
+    else:
+        QgsMessageLog.logMessage(
+            "No packages_installer_dialog available; skipping package check.",
+            "TrailScan",
+            Qgis.Warning
+        )
+
+    return installer
 
 
 def classFactory(iface):
@@ -51,22 +74,27 @@ def classFactory(iface):
     global _package_check_done
 
     if not _package_check_done:
-        _package_check_done = True  # Prevent race condition with double initialization
+        _package_check_done = True  # Prevent double initialization
 
         installer = _try_import_installer()
         if installer:
             try:
                 from qgis.PyQt import QtCore
-                # Increased delay to 2000ms (2 seconds) to ensure QGIS is fully loaded on macOS
+                # Timer für MacOS / Verzögerung vor Paket-Check
                 QtCore.QTimer.singleShot(
                     2000,
                     lambda: installer.check_required_packages_and_install_if_necessary(iface=iface)
                 )
-            except Exception as e:
                 QgsMessageLog.logMessage(
-                    f"QTimer failed, running installer immediately: {e}",
+                    "Package check scheduled via QTimer (2s delay) for MacOS.",
                     "TrailScan",
                     Qgis.Info
+                )
+            except Exception as e:
+                QgsMessageLog.logMessage(
+                    f"QTimer failed; running installer immediately: {e}",
+                    "TrailScan",
+                    Qgis.Warning
                 )
                 installer.check_required_packages_and_install_if_necessary(iface=iface)
 
@@ -76,3 +104,4 @@ def classFactory(iface):
         from trailscan import TrailScan
 
     return TrailScan(iface)
+
