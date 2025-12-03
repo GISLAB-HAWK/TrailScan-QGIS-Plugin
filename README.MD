@@ -17,7 +17,7 @@
   </em>
 </p>
 
-**TrailScan** is QGIS Plugin designed to apply a deep learning model to **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data. In Central European mixed and deciduous forests, permanently designed skid trail networks are used by ground-based forest operations, e.g. harvesters, forwarders and other heavy vehicles. 
+**TrailScan** is a QGIS Plugin designed to apply a deep learning model to **detect and segment skid trails (logging trails)** from Airborne Laser Scanning (ALS) data. In Central European mixed and deciduous forests, permanently designed skid trail networks are used by ground-based forest operations, e.g. harvesters, forwarders and other heavy vehicles. 
 
 ---
 
