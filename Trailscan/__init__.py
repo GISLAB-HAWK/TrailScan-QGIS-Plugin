@@ -9,8 +9,8 @@
 # (at your option) any later version.
 
 #---------------------------------------------------------------------
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QAction, QMessageBox
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.core import QgsApplication, QgsProcessingProvider, Qgis
 import processing
 import os
@@ -20,7 +20,7 @@ import importlib
 import shutil
 
 def classFactory(iface):
-    try:
+    """ try:
         # Try to import packages_installer_dialog using relative import
         from . import packages_installer_dialog
         # Defer package check to avoid blocking UI during plugin load
@@ -43,7 +43,7 @@ def classFactory(iface):
             # If both fail, log error but continue
             print(f"Warning: Could not import packages_installer_dialog: {e}")
             print("Continuing without package installation check...")
-
+"""
     try:
         # Try relative import first
         from .trailscan import TrailScan
