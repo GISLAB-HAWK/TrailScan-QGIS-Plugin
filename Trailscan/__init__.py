@@ -20,7 +20,7 @@ import importlib
 import shutil
 
 def classFactory(iface):
-    """ try:
+    try:
         # Try to import packages_installer_dialog using relative import
         from . import packages_installer_dialog
         # Defer package check to avoid blocking UI during plugin load
@@ -43,7 +43,6 @@ def classFactory(iface):
             # If both fail, log error but continue
             print(f"Warning: Could not import packages_installer_dialog: {e}")
             print("Continuing without package installation check...")
-"""
     try:
         # Try relative import first
         from .trailscan import TrailScan
