@@ -11,8 +11,7 @@
 
 import os
 from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtGui import QIcon, QAction
 from qgis.core import QgsApplication, QgsProcessingProvider, QgsProcessingAlgorithm, Qgis
 import processing
 
@@ -51,7 +50,7 @@ class TrailScan:
         self.action2.setStatusTip('Run TrailScan model inference on preprocessed raster')
 
         # Show text next to icon
-        self.toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
 
         # Add actions to toolbar
         self.toolbar.addAction(self.action)
@@ -72,7 +71,7 @@ class TrailScan:
             self.algorithms_loaded = True
         except Exception as e:
             QgsApplication.messageLog().logMessage(f"Failed to initialize TrailScan processing provider: {e}",
-                                                   "TrailScan", Qgis.Critical)
+                                                   "TrailScan", Qgis.MessageLevel.Critical)
             self.algorithms_loaded = False
 
     def unload(self):
@@ -93,7 +92,7 @@ class TrailScan:
         try:
             processing.execAlgorithmDialog("trailscan:preprocessing")
         except Exception as e:
-            QgsApplication.messageLog().logMessage(f"Failed to run preprocessing: {e}", "TrailScan", Qgis.Critical)
+            QgsApplication.messageLog().logMessage(f"Failed to run preprocessing: {e}", "TrailScan", Qgis.MessageLevel.Critical)
             self.iface.messageBar().pushCritical("TrailScan Plugin", f"Failed to run preprocessing: {e}")
 
     def runInference(self):
@@ -105,7 +104,7 @@ class TrailScan:
         try:
             processing.execAlgorithmDialog("trailscan:inference")
         except Exception as e:
-            QgsApplication.messageLog().logMessage(f"Failed to run inference: {e}", "TrailScan", Qgis.Critical)
+            QgsApplication.messageLog().logMessage(f"Failed to run inference: {e}", "TrailScan", Qgis.MessageLevel.Critical)
             self.iface.messageBar().pushCritical("TrailScan Plugin", f"Failed to run inference: {e}")
 
 # --------------------------------------------------------------------
@@ -147,7 +146,7 @@ class TrailScanProvider(QgsProcessingProvider):
             QgsApplication.messageLog().logMessage(
                 f"TrailScan: Algorithms not registered yet - missing dependency ({e}). "
                 f"Please restart QGIS once package installation has finished.",
-                "TrailScan", Qgis.Warning)
+                "TrailScan", Qgis.MessageLevel.Warning)
             return
 
         self.addAlgorithm(TrailscanPreProcessingAlgorithm())
@@ -228,4 +227,4 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         )
 
     def createInstance(self):
-        return self._
+        return self.__class__()

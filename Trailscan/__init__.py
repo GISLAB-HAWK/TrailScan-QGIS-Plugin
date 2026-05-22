@@ -10,7 +10,7 @@
 
 #---------------------------------------------------------------------
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QMessageBox
+from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import QgsApplication, QgsProcessingProvider, Qgis
 import processing
 import os

@@ -197,7 +197,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         """ Move the window to the top.
         Although if installed from plugin manager, the plugin manager will move itself to the top anyway.
         """
-        self.setWindowState((self.windowState() & ~QtCore.Qt.WindowMinimized) | QtCore.Qt.WindowActive)
+        self.setWindowState((self.windowState() & ~QtCore.Qt.WindowState.WindowMinimized) | QtCore.Qt.WindowState.WindowActive)
 
         if sys.platform == "linux" or sys.platform == "linux2":
             pass
@@ -621,7 +621,7 @@ def check_required_packages_and_install_if_necessary(iface):
         # If still not available, show installer dialog
         global dialog
         dialog = PackagesInstallerDialog(iface)
-        dialog.setWindowModality(QtCore.Qt.WindowModal)
+        dialog.setWindowModality(QtCore.Qt.WindowModality.WindowModal)
         dialog.show()
         dialog.move_to_top()
         
