@@ -134,11 +134,21 @@ class TrailScanProvider(QgsProcessingProvider):
     def loadAlgorithms(self):
         """Load Preprocessing and Inference algorithms."""
         try:
-            from .preprocessing import TrailscanPreProcessingAlgorithm
-            from .inference import TrailscanInferenceProcessingAlgorithm
-        except ImportError:
-            from preprocessing import TrailscanPreProcessingAlgorithm
-            from inference import TrailscanInferenceProcessingAlgorithm
+            try:
+                from .preprocessing import TrailscanPreProcessingAlgorithm
+                from .inference import TrailscanInferenceProcessingAlgorithm
+            except ImportError:
+                from preprocessing import TrailscanPreProcessingAlgorithm
+                from inference import TrailscanInferenceProcessingAlgorithm
+        except ModuleNotFoundError as e:
+            # Required packages (rasterio, laspy, ...) may still be installing
+            # on first launch. Skip algorithm registration gracefully instead
+            # of raising an error; they load on the next QGIS start.
+            QgsApplication.messageLog().logMessage(
+                f"TrailScan: Algorithms not registered yet - missing dependency ({e}). "
+                f"Please restart QGIS once package installation has finished.",
+                "TrailScan", Qgis.Warning)
+            return
 
         self.addAlgorithm(TrailscanPreProcessingAlgorithm())
         self.addAlgorithm(TrailscanInferenceProcessingAlgorithm())
@@ -218,4 +228,4 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
         )
 
     def createInstance(self):
-        return self.__class__()
+        return self._
