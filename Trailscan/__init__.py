@@ -9,6 +9,30 @@
 # (at your option) any later version.
 
 #---------------------------------------------------------------------
+import sys
+
+
+class _SafeStream:
+    """No-op fallback for sys.stdout / sys.stderr when QGIS has no console.
+
+    On Windows, QGIS runs without a console, so sys.stdout and sys.stderr
+    can be None. Libraries such as NumPy may call sys.stderr.write(), which
+    then raises 'AttributeError: NoneType has no attribute write' and floods
+    the QGIS log. Substituting a harmless no-op stream prevents that.
+    """
+
+    def write(self, *args, **kwargs):
+        return 0
+
+    def flush(self, *args, **kwargs):
+        pass
+
+
+if sys.stdout is None:
+    sys.stdout = _SafeStream()
+if sys.stderr is None:
+    sys.stderr = _SafeStream()
+
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import QgsApplication, QgsProcessingProvider, Qgis
