@@ -390,7 +390,8 @@ class TrailscanInferenceProcessingAlgorithm(QgsProcessingAlgorithm):
 
         meta.update({
             'count': 1,
-            'dtype': 'float32'
+            'dtype': 'float32',
+            'driver': 'GTiff'  # force a writable GeoTIFF driver (input may use the read-only LIBERTIFF driver)
         })
 
         with rasterio.open(output_raster, 'w', **meta) as dst:
