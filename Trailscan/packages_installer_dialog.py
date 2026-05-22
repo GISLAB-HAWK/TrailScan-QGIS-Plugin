@@ -138,6 +138,10 @@ def _find_embedded_python_executable() -> str:
                 os.path.join(prefix, 'apps', 'Python39', 'python.exe'),
                 os.path.join(prefix, 'apps', 'Python310', 'python.exe'),
                 os.path.join(prefix, 'apps', 'Python311', 'python.exe'),
+                os.path.join(prefix, 'apps', 'Python312', 'python.exe'),
+                os.path.join(prefix, 'apps', 'Python313', 'python.exe'),
+                os.path.join(prefix, 'apps', 'Python314', 'python.exe'),
+                os.path.join(prefix, 'apps', 'Python315', 'python.exe'),
                 os.path.join(os.path.dirname(exe), 'python.exe'),  # near qgis-bin.exe
             ])
         else:

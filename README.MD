@@ -115,7 +115,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
 # Plugin Installation
 **In QGIS, navigate to 'Plugins' -->  'Manage and Install Plugins...'**
 - Search for 'TrailScan' and click on 'Install Plugin'
-- -Aditional Python packages are installed automatically with the plugin installation:
+- Aditional Python packages are installed automatically with the plugin installation:
   - `numpy`
   - `scipy`
   - `laspy`
@@ -123,7 +123,7 @@ ALS data can be collected using aircraft, helicopters, or UAVs equipped with LiD
   - `rasterio`
   - `onnxruntime`
 
-> **Important:** You may need to restart QGIS after TrailScan Plugin installation.
+**Important:** You may need to restart QGIS after TrailScan Plugin installation.
 
 ---
 ## Hardware Recommendations: 
