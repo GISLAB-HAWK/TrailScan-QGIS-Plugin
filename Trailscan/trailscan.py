@@ -83,11 +83,38 @@ class TrailScan:
         except Exception as e:
             QgsApplication.messageLog().logMessage(f"Error unloading TrailScan plugin: {e}", "TrailScan")
 
+    def _algorithm_available(self, algorithm_id):
+        """Check whether a TrailScan Processing algorithm is registered.
+
+        On first launch the required Python packages (rasterio, laspy, ...)
+        are still being installed, so the algorithms cannot be registered in
+        the running QGIS session yet. In that case show a clear message in
+        the message bar asking the user to restart QGIS, instead of letting
+        the toolbar button do nothing silently.
+        """
+        if QgsApplication.processingRegistry().algorithmById(algorithm_id) is not None:
+            return True
+        self.iface.messageBar().pushMessage(
+            "TrailScan",
+            "Required packages have just been installed. Please restart "
+            "QGIS to finish enabling the TrailScan tools.",
+            level=Qgis.MessageLevel.Warning,
+            duration=0)
+        QgsApplication.messageLog().logMessage(
+            f"Algorithm '{algorithm_id}' not registered yet - please restart "
+            f"QGIS after package installation has finished.",
+            "TrailScan", Qgis.MessageLevel.Warning)
+        return False
+
     def runPreProcessing(self):
         """Run preprocessing algorithm."""
         if not self.algorithms_loaded:
             self.iface.messageBar().pushCritical("TrailScan Plugin",
                                                  "Processing algorithms not loaded.")
+            return
+        # Algorithms register only once their dependencies are importable;
+        # on a first install that happens after the next QGIS restart.
+        if not self._algorithm_available("trailscan:preprocessing"):
             return
         try:
             processing.execAlgorithmDialog("trailscan:preprocessing")
@@ -100,6 +127,10 @@ class TrailScan:
         if not self.algorithms_loaded:
             self.iface.messageBar().pushCritical("TrailScan Plugin",
                                                  "Processing algorithms not loaded.")
+            return
+        # Algorithms register only once their dependencies are importable;
+        # on a first install that happens after the next QGIS restart.
+        if not self._algorithm_available("trailscan:inference"):
             return
         try:
             processing.execAlgorithmDialog("trailscan:inference")
