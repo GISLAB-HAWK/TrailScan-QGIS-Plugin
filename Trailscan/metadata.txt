@@ -17,7 +17,7 @@ category=Raster
 experimental=FALSE
 changelog=0.2.0:
  - Added compatibility with QGIS 4.0 / Qt6 (plugin still runs on QGIS 3.38+).
- - Fixed inference error caused by the read-only LIBERTIFF driver; outputs are now written as GeoTIFF.
+ - Fixed inference error caused by the read-only 'LIBERTIFF' driver; outputs are now written as GeoTIFF.
  - Fixed startup crash on installations using Python 3.12 to 3.15.
  - Graceful handling when required Python packages are not yet importable; user-facing warning about the package download has been added.
  - Visible restart hint in the QGIS message bar when toolbar icons are clicked before the freshly installed packages are available.
