@@ -4,7 +4,7 @@ qgisMinimumVersion=3.38
 qgisMaximumVersion=4.99
 description=Deep learning-based segmentation of skid trails from airborne LiDAR data
 about=Note: On first installation TrailScan downloads additional Python packages (rasterio, laspy, scipy and others). This can take several minutes, during which QGIS may become unresponsive - please save your work before installing and wait until the installation has finished. TrailScan is a QGIS plugin for automatic mapping of skid trails from Airborne Laser Scanning (ALS) data in forest environments. Input: ALS point clouds (.las / .laz) from aircraft, helicopters, or UAVs. Workflow: 1. Preprocessing – Convert the point cloud into a normalized multi-band raster (DTM, CHM, MRM, VDI). 2. Inference – Apply the pretrained TrailScan deep learning model to generate a probability map ("Trailmap"). The trained TrailScan model is available at https://doi.org/10.25625/GEIP6T. Output: A georeferenced raster ("Trailmap" with values 0–1) indicating the likelihood of skid trail presence, ready for further GIS analysis.
-version=0.1.2
+version=0.2.0
 tracker=https://github.com/GISLAB-HAWK/TrailScan-QGIS-Plugin/issues
 author=HAWK Forest Monitoring Lab (Tanja Kempen, Mathias Gröbe, Maximilian Freudenberg, Paul Magdon)
 email=tanja.kempen@hawk.de
@@ -15,4 +15,12 @@ tags=LiDAR, Point Cloud, Deep Learning, Forestry, Skid Trails, ALS
 hasProcessingProvider=True
 category=Raster
 experimental=FALSE
-changelog=Error handling for ALS Data classification, CRS and point density. Shape check added to avoid different output sizes of raster layers.
+changelog=0.2.0:
+ - Added compatibility with QGIS 4.0 / Qt6 (plugin still runs on QGIS 3.38+).
+ - Fixed inference error caused by the read-only LIBERTIFF driver; outputs are now written as GeoTIFF.
+ - Fixed startup crash on installations using Python 3.12 to 3.15.
+ - Graceful handling when required Python packages are not yet importable; user-facing warning about the package download has been added.
+ - Visible restart hint in the QGIS message bar when toolbar icons are clicked before the freshly installed packages are available.
+ 0.1.2:
+ - Error handling for ALS Data classification, CRS and point density.
+ - Shape check added to avoid different output sizes of raster layers.
