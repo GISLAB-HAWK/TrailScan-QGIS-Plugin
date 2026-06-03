@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+title: "TrailScan"
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+
+authors:
+  - family-names: Kempen
+    given-names: Tanja
+    orcid: "https://orcid.org/0009-0007-0586-2370"
+    affiliation: "HAWK University of Applied Sciences and Arts"
+
+  - family-names: Gröbe
+    given-names: Mathias
+    affiliation: "TU Dresden"
+
+  - family-names: Freudenberg
+    given-names: Maximilian
+    affiliation: "Georg-August University Göttingen"
+
+  - family-names: Magdon
+    given-names: Paul
+    orcid: "https://orcid.org/0000-0003-3777-5478"
+    affiliation: "HAWK University of Applied Sciences and Arts"
+
+abstract: >
+  TrailScan is a QGIS plugin for deep learning-based segmentation
+  of skid trails from airborne LiDAR data.
+
+keywords:
+  - QGIS
+  - LiDAR
+  - ALS
+  - Forestry
+  - Skid Trails
+  - Deep Learning
+  - Remote Sensing
+  - GeoAI
+
+license: GPL-2.0-or-later
+
+repository-code: "https://github.com/GISLAB-HAWK/TrailScan-QGIS-Plugin"
+url: "https://plugins.qgis.org/plugins/TrailScan/"
